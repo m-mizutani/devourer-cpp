@@ -32,11 +32,15 @@
 int devourer_main(int argc, char *argv[]) {
   optparse::OptionParser psr = optparse::OptionParser();
   psr.add_option("-r").dest("read_file")
-    .help("Specify read pcap format file(s)");
+    .help("Pcap format file path");
   psr.add_option("-i").dest("interface")
-    .help("Specify interface to monitor on the fly");
-  psr.add_option("-f").dest("filter")
-    .help("Filter");
+    .help("Interface to monitor on the fly");
+  psr.add_option("-f").dest("fluentd")
+    .help("Fluentd destination, e.g. 127.0.0.1:24224");
+  psr.add_option("-l").dest("log")
+    .help("Log file path");
+  psr.add_option("-v").dest("verbose")
+    .help("Verbose mode");
   
   optparse::Values& opt = psr.parse_args(argc, argv);
   std::vector <std::string> args = psr.args();
@@ -46,7 +50,7 @@ int devourer_main(int argc, char *argv[]) {
   if (opt.is_set("read_file")) {
     devourer = new Devourer(opt["read_file"], devourer::PCAP_FILE);
   } else if (opt.is_set("interface")) {
-    devourer = new Devourer(opt["read_file"], devourer::PCAP_FILE);
+    devourer = new Devourer(opt["interface"], devourer::INTERFACE);
   }
     
   if (!devourer) {
@@ -55,7 +59,10 @@ int devourer_main(int argc, char *argv[]) {
   }
 
   try {
-    
+    if (opt.is_set("log")) {
+    }
+
+    devourer->start();
   } catch (devourer::Exception &e) {
     std::cerr << "Devourer Error: " << e.what() << std::endl;
     return false;

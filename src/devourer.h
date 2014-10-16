@@ -25,6 +25,8 @@
  */
 
 #include <exception>
+#include <vector>
+#include <msgpack.hpp>
 #include <swarm.h>
 
 namespace devourer {
@@ -41,16 +43,83 @@ namespace devourer {
     PCAP_FILE = 1,
     INTERFACE = 2,
   };
+
+
+  class Stream {
+  public:
+    Stream() {}
+    virtual ~Stream() {}
+    virtual void write(const msgpack::sbuffer &sbuf) throw(Exception) = 0;
+  };
+
+  class FileStream : public Stream {
+  public:
+    FileStream(const std::string &fpath);
+    virtual ~FileStream();
+    void write(const msgpack::sbuffer &sbuf) throw(Exception) = 0;
+  };
+
+  class FluentdStream : public Stream {
+  public:
+    FluentdStream(const std::string &host, int port);
+    virtual ~FluentdStream();
+    void write(const msgpack::sbuffer &sbuf) throw(Exception) = 0;
+  };
+
+
+
+  class Plugin : public swarm::Handler {
+  private:
+    Stream *stream_;
+
+  protected:
+    void write_stream(const msgpack::sbuffer &sbuf);
+
+  public:
+    Plugin() : stream_(NULL) {}
+    virtual ~Plugin() {}
+    virtual const std::string& recv_event() const = 0;
+    void set_stream(Stream *stream) { this->stream_ = stream; }
+
+  };
+
+  class DnsTx : public Plugin {
+  private:
+    static const std::string recv_event_;
+
+  public:
+    DnsTx();
+    ~DnsTx();
+    void recv (swarm::ev_id eid, const  swarm::Property &p);
+    const std::string& recv_event() const;
+  };
+
+
+  class Proc : public swarm::Task {
+  private:
+    swarm::Swarm *sw_;
+    std::vector<Plugin*> plugins_;
+
+  public:
+    Proc(swarm::Swarm *sw);
+    ~Proc();
+    void exec (const struct timespec &ts);
+    void load_plugin(Plugin *plugin);
+  };
+
 }
 
 class Devourer {
 private:
   std::string target_;
- devourer::Source src_;
+  devourer::Source src_;
   swarm::Swarm *sw_;
 
 public:
   Devourer(const std::string &target, devourer::Source src);
   ~Devourer();
+  void set_fluentd(const std::string &dst) throw(devourer::Exception);
+  void set_logfile(const std::string &fpath) throw(devourer::Exception);
+  void enable_verbose();
   void start() throw(devourer::Exception);
 };

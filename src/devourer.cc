@@ -27,6 +27,59 @@
 #include <swarm.h>
 #include "./devourer.h"
 
+namespace devourer {
+
+  Proc::Proc(swarm::Swarm *sw) : sw_(sw) {
+    // ev_dns_  = this->sw_lookup_event_id("dns.packet");
+  }
+  Proc::~Proc() {
+  }
+
+
+  FileStream::FileStream(const std::string &fpath) {
+  }
+  FileStream::~FileStream() {
+  }
+  void FileStream::write(const msgpack::sbuffer &sbuf) throw(Exception) {
+  }
+
+  FluentdStream::FluentdStream(const std::string &host, int port) {
+  }
+  FluentdStream::~FluentdStream() {
+  }
+  void FluentdStream::write(const msgpack::sbuffer &sbuf) throw(Exception) {
+  }
+
+  void Proc::exec (const struct timespec &ts) {
+    printf("yes!yes!yes!\n");
+  }  
+
+  void Proc::load_plugin(Plugin *plugin) {
+    
+  }
+
+  void Plugin::write_stream(const msgpack::sbuffer &sbuf) {
+    if (this->stream_) {
+      this->stream_->write(sbuf);
+    }
+  }
+
+
+  const std::string DnsTx::recv_event_ = "dns.packet";
+
+  DnsTx::DnsTx() {
+  }
+  DnsTx::~DnsTx() {
+  }
+  void DnsTx::recv (swarm::ev_id eid, const  swarm::Property &p) {
+  }
+  const std::string& DnsTx::recv_event() const {
+    return DnsTx::recv_event_;
+  }
+
+                        
+}
+
 Devourer::Devourer(const std::string &target, devourer::Source src) :
   target_(target), src_(src), sw_(NULL)
 {
@@ -50,6 +103,11 @@ void Devourer::start() throw(devourer::Exception) {
     throw new devourer::Exception(this->sw_->errmsg());
   }
 
-  
-    
+  devourer::Proc *proc = new devourer::Proc(this->sw_);
+  proc->load_plugin(new devourer::DnsTx());
+
+  this->sw_->set_periodic_task(proc, 1.);
+  this->sw_->start();
+
+  return;
 }
