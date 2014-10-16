@@ -28,14 +28,6 @@
 #include "./devourer.h"
 
 namespace devourer {
-
-  Proc::Proc(swarm::Swarm *sw) : sw_(sw) {
-    // ev_dns_  = this->sw_lookup_event_id("dns.packet");
-  }
-  Proc::~Proc() {
-  }
-
-
   FileStream::FileStream(const std::string &fpath) {
   }
   FileStream::~FileStream() {
@@ -50,13 +42,7 @@ namespace devourer {
   void FluentdStream::write(const msgpack::sbuffer &sbuf) throw(Exception) {
   }
 
-  void Proc::exec (const struct timespec &ts) {
-    printf("yes!yes!yes!\n");
-  }  
 
-  void Proc::load_plugin(Plugin *plugin) {
-    
-  }
 
   void Plugin::write_stream(const msgpack::sbuffer &sbuf) {
     if (this->stream_) {
@@ -73,8 +59,14 @@ namespace devourer {
   }
   void DnsTx::recv (swarm::ev_id eid, const  swarm::Property &p) {
   }
+  void DnsTx::exec (const struct timespec &ts) {
+    
+  }
   const std::string& DnsTx::recv_event() const {
     return DnsTx::recv_event_;
+  }
+  int DnsTx::task_interval() const {
+    return 1;
   }
 
                         
@@ -103,10 +95,31 @@ void Devourer::start() throw(devourer::Exception) {
     throw new devourer::Exception(this->sw_->errmsg());
   }
 
-  devourer::Proc *proc = new devourer::Proc(this->sw_);
-  proc->load_plugin(new devourer::DnsTx());
 
-  this->sw_->set_periodic_task(proc, 1.);
+  devourer::Stream *stream = NULL;
+
+  {
+    devourer::Plugin *plugin = new devourer::DnsTx();
+    std::string ev = plugin->recv_event();
+    if (!ev.empty()) {
+      swarm::hdlr_id hid = this->sw_->set_handler(ev, plugin);
+      if (hid == swarm::HDLR_NULL) {
+        throw new devourer::Exception(this->sw_->errmsg());
+      }
+    }
+
+    int interval = plugin->task_interval();
+    if (interval > 0) {
+      swarm::task_id tid = 
+        this->sw_->set_periodic_task(plugin, static_cast<float>(interval));
+      if (tid == swarm::TASK_NULL) {
+        throw new devourer::Exception(this->sw_->errmsg()); 
+      }
+    }
+
+    plugin->set_stream(stream);
+  }
+
   this->sw_->start();
 
   return;

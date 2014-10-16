@@ -68,7 +68,7 @@ namespace devourer {
 
 
 
-  class Plugin : public swarm::Handler {
+  class Plugin : public swarm::Handler, public swarm::Task {
   private:
     Stream *stream_;
 
@@ -79,8 +79,8 @@ namespace devourer {
     Plugin() : stream_(NULL) {}
     virtual ~Plugin() {}
     virtual const std::string& recv_event() const = 0;
+    virtual int task_interval() const = 0;
     void set_stream(Stream *stream) { this->stream_ = stream; }
-
   };
 
   class DnsTx : public Plugin {
@@ -91,20 +91,9 @@ namespace devourer {
     DnsTx();
     ~DnsTx();
     void recv (swarm::ev_id eid, const  swarm::Property &p);
-    const std::string& recv_event() const;
-  };
-
-
-  class Proc : public swarm::Task {
-  private:
-    swarm::Swarm *sw_;
-    std::vector<Plugin*> plugins_;
-
-  public:
-    Proc(swarm::Swarm *sw);
-    ~Proc();
     void exec (const struct timespec &ts);
-    void load_plugin(Plugin *plugin);
+    const std::string& recv_event() const;
+    int task_interval() const;
   };
 
 }
@@ -114,6 +103,7 @@ private:
   std::string target_;
   devourer::Source src_;
   swarm::Swarm *sw_;
+  std::vector<devourer::Plugin*> plugins_;
 
 public:
   Devourer(const std::string &target, devourer::Source src);
