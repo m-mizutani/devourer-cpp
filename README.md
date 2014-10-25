@@ -1,8 +1,12 @@
 Devourer
 ========
 
-Devourer is live packet capture and statistics tool for various protocols.
+Devourer is live packet capture and statistics tool for multipurpose.
 
+- DNS
+  - Query latency
+  - Response loss rate
+  - Response without query
 
 Prerequisite
 ------
