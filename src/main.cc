@@ -60,6 +60,7 @@ int devourer_main(int argc, char *argv[]) {
 
   try {
     if (opt.is_set("log")) {
+      devourer->set_logfile(opt["log"]);
     }
 
     devourer->start();

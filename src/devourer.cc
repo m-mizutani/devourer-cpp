@@ -24,31 +24,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/stat.h> 
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 #include <iostream>
 #include <swarm.h>
 #include "./devourer.h"
+#include "./object.h"
 #include "./debug.h"
 
 namespace devourer {
-  FileStream::FileStream(const std::string &fpath) {
+  FileStream::FileStream(const std::string &fpath) : fpath_(fpath) {
   }
   FileStream::~FileStream() {
   }
-  void FileStream::write(const msgpack::sbuffer &sbuf) throw(Exception) {
+  void FileStream::setup() {
+    this->fd_ = ::open(this->fpath_.c_str(), O_WRONLY|O_CREAT, 0644);
+    if (this->fd_ < 0) {
+      std::string err(strerror(errno));
+      throw new Exception("FileStream Error: " + err);
+    }
+  }
+  void FileStream::write(const object::Object &obj) throw(Exception) {
+    msgpack::sbuffer buf;
+    msgpack::packer <msgpack::sbuffer> pk (&buf);
+    obj.to_msgpack(&pk);
+    ::write(this->fd_, buf.data(), buf.size());
   }
 
   FluentdStream::FluentdStream(const std::string &host, int port) {
   }
   FluentdStream::~FluentdStream() {
   }
-  void FluentdStream::write(const msgpack::sbuffer &sbuf) throw(Exception) {
+  void FluentdStream::setup() {
+  }
+  void FluentdStream::write(const object::Object &obj) throw(Exception) {
+    msgpack::sbuffer buf;
+    msgpack::packer <msgpack::sbuffer> pk (&buf);
+    obj.to_msgpack(&pk);
   }
 
 
-
-  void Plugin::write_stream(const msgpack::sbuffer &sbuf) {
+  void Plugin::write_stream(const object::Object &obj) {
     if (this->stream_) {
-      this->stream_->write(sbuf);
+      this->stream_->write(obj);
     }
   }
 
@@ -155,14 +175,18 @@ namespace devourer {
       // Handling DNS response.
       if (q) {
         double ts = p.ts() - q->last_ts();
-        if (ts > 1) {
-          printf("%f %s -> %s [", q->last_ts(), q->client().c_str(), q->server().c_str());
-          for(size_t i = 0; i < q->q_count(); i++) {
+
+        object::Map map;
+        map.put("ts", q->last_ts());
+        map.put("client", q->client());
+        map.put("server", q->server());
+        /*
+        for(size_t i = 0; i < q->q_count(); i++) {
             printf("%s(%s), ", q->q_name(i).c_str(), q->q_type(i).c_str());
           }
-          printf("]: %f\n", ts);
-        }
-
+        */
+        map.put("latency", ts);
+        this->write_stream(map);
         q->set_has_reply(true);
       } else {
         debug(1, "not found");
@@ -180,12 +204,32 @@ namespace devourer {
 }
 
 Devourer::Devourer(const std::string &target, devourer::Source src) :
-  target_(target), src_(src), sw_(NULL)
+  target_(target), src_(src), sw_(NULL), stream_(NULL)
 {
 }
 
 Devourer::~Devourer(){
   delete this->sw_;
+}
+
+void Devourer::set_fluentd(const std::string &dst) throw(devourer::Exception) {
+  size_t pos;
+  if(std::string::npos != (pos = dst.find(":", 0))) {
+    std::string host = dst.substr(0, pos);
+    std::string s_port = dst.substr(pos + 1);
+    char *e;
+    int port = strtol(s_port.c_str(), &e, 0);
+    if (*e != '\0') {
+      throw new devourer::Exception("Fluentd option format must be 'hostname:port'");
+    }
+    this->stream_ = new devourer::FluentdStream(host, port);
+
+  } else {
+    throw new devourer::Exception("Fluentd option format must be 'hostname:port'");
+  }
+}
+void Devourer::set_logfile(const std::string &fpath) throw(devourer::Exception) {
+  this->stream_ = new devourer::FileStream(fpath);
 }
 
 void Devourer::start() throw(devourer::Exception) {
@@ -203,7 +247,9 @@ void Devourer::start() throw(devourer::Exception) {
   }
 
 
-  devourer::Stream *stream = NULL;
+  if (this->stream_) {
+    this->stream_->setup();
+  }
 
   devourer::Plugin *plugin = new devourer::DnsTx();
   {
@@ -217,14 +263,14 @@ void Devourer::start() throw(devourer::Exception) {
 
     int interval = plugin->task_interval();
     if (interval > 0) {
-      swarm::task_id tid = 
+      swarm::task_id tid =
         this->sw_->set_periodic_task(plugin, static_cast<float>(interval));
       if (tid == swarm::TASK_NULL) {
-        throw new devourer::Exception(this->sw_->errmsg()); 
+        throw new devourer::Exception(this->sw_->errmsg());
       }
     }
 
-    plugin->set_stream(stream);
+    plugin->set_stream(this->stream_);
   }
 
   this->sw_->start();

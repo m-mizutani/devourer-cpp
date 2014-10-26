@@ -29,7 +29,8 @@
 #include <msgpack.hpp>
 #include <swarm.h>
 
-#include "lru-hash.h"
+#include "./lru-hash.h"
+#include "./object.h"
 
 namespace devourer {
   class Exception : public std::exception {
@@ -51,21 +52,33 @@ namespace devourer {
   public:
     Stream() {}
     virtual ~Stream() {}
-    virtual void write(const msgpack::sbuffer &sbuf) throw(Exception) = 0;
+    virtual void setup() = 0;
+    virtual void write(const object::Object &obj) throw(Exception) = 0;
   };
 
   class FileStream : public Stream {
+  private:
+    std::string fpath_;
+    int fd_;
+
   public:
     FileStream(const std::string &fpath);
     virtual ~FileStream();
-    void write(const msgpack::sbuffer &sbuf) throw(Exception) = 0;
+    void setup();
+    void write(const object::Object &obj) throw(Exception);
   };
 
   class FluentdStream : public Stream {
+  private:
+    std::string host_;
+    int port_;
+    int sock_;
+
   public:
     FluentdStream(const std::string &host, int port);
     virtual ~FluentdStream();
-    void write(const msgpack::sbuffer &sbuf) throw(Exception) = 0;
+    void setup();
+    void write(const object::Object &obj) throw(Exception);
   };
 
 
@@ -75,7 +88,7 @@ namespace devourer {
     Stream *stream_;
 
   protected:
-    void write_stream(const msgpack::sbuffer &sbuf);
+    void write_stream(const object::Object &obj);
 
   public:
     Plugin() : stream_(NULL) {}
@@ -158,6 +171,7 @@ private:
   devourer::Source src_;
   swarm::Swarm *sw_;
   std::vector<devourer::Plugin*> plugins_;
+  devourer::Stream *stream_;
 
 public:
   Devourer(const std::string &target, devourer::Source src);
