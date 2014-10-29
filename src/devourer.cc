@@ -28,6 +28,13 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+
 #include <iostream>
 #include <swarm.h>
 #include "./devourer.h"
@@ -46,29 +53,95 @@ namespace devourer {
       throw new Exception("FileStream Error: " + err);
     }
   }
-  void FileStream::write(const object::Object &obj) throw(Exception) {
+  void FileStream::write(const std::string &tag, object::Object *obj, 
+                         const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
-    obj.to_msgpack(&pk);
+    obj->to_msgpack(&pk);
     ::write(this->fd_, buf.data(), buf.size());
   }
 
-  FluentdStream::FluentdStream(const std::string &host, int port) {
+
+  const bool FluentdStream::DBG = false;
+
+  FluentdStream::FluentdStream(const std::string &host, 
+                               const std::string &port) : 
+    host_(host), port_(port) {
   }
   FluentdStream::~FluentdStream() {
   }
   void FluentdStream::setup() {
+    debug(DBG, "host=%s, port=%s", this->host_.c_str(), this->port_.c_str());
+
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;
+    
+    int r;
+    if (0 != (r = getaddrinfo(this->host_.c_str(), this->port_.c_str(), 
+                              &hints, &result))) {
+      std::string errmsg(gai_strerror(r));
+      throw new Exception("getaddrinfo error: " + errmsg);
+    }
+
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+      this->sock_ = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+      if (this->sock_ == -1) {
+        continue;
+      }
+
+      if (connect(this->sock_, rp->ai_addr, rp->ai_addrlen) != -1) {
+        char buf[INET6_ADDRSTRLEN];
+        struct sockaddr_in *addr_in = (struct sockaddr_in *) rp->ai_addr;
+        inet_ntop(rp->ai_family, &addr_in->sin_addr.s_addr, buf, 
+                  rp->ai_addrlen);
+
+        debug(true, "connected to %s", buf);
+        break;
+      }
+    }
+
+    if (rp == NULL) {
+      throw new Exception("no avaiable address for " + this->host_);
+    }
+    freeaddrinfo(result);
+
   }
-  void FluentdStream::write(const object::Object &obj) throw(Exception) {
+  void FluentdStream::write(const std::string &tag, object::Object *obj,
+                            const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
-    obj.to_msgpack(&pk);
+    object::Array arr;
+    object::Array *msg_set = new object::Array();
+    object::Array *msg = new object::Array();
+    std::string tag_prefix("devourer.");
+
+    arr.push(tag_prefix + tag);
+    arr.push(msg_set);
+    msg_set->push(msg);
+    msg->push(static_cast<int64_t>(ts.tv_sec));
+    msg->push(obj);
+
+    arr.to_msgpack(&pk);
+    ::write(this->sock_, buf.data(), buf.size());
   }
 
 
-  void Plugin::write_stream(const object::Object &obj) {
+  void Plugin::emit(const std::string &tag, object::Object *obj,
+                            struct timeval *ts) {
+
     if (this->stream_) {
-      this->stream_->write(obj);
+      if (ts) {
+        this->stream_->write(tag, obj, *ts);
+      } else {
+        struct timeval now_ts;
+        gettimeofday(&now_ts, NULL);
+        this->stream_->write(tag, obj, now_ts);
+      }
     }
   }
 
@@ -100,11 +173,13 @@ namespace devourer {
   bool DnsTx::Query::has_reply() const {
     return this->has_reply_;
   }
-  void DnsTx::Query::set_flow(const std::string &client, const std::string &server) {
+  void DnsTx::Query::set_flow(const std::string &client, 
+                              const std::string &server) {
     this->client_ = client;
     this->server_ = server;
   }
-  void DnsTx::Query::add_question(const std::string &name, const std::string &type) {
+  void DnsTx::Query::add_question(const std::string &name,
+                                  const std::string &type) {
     this->name_.push_back(name);
     this->type_.push_back(type);
   }
@@ -121,6 +196,7 @@ namespace devourer {
   void DnsTx::flush_query() {
     LRUHash::Node *n;
     while(NULL != (n = this->query_table_.pop())) {
+      /*
       Query *q = dynamic_cast<Query*>(n);
 
       printf("TIMEOUT %f %s -> %s [", q->last_ts(), q->client().c_str(), q->server().c_str());
@@ -128,6 +204,7 @@ namespace devourer {
         printf("%s(%s), ", q->q_name(i).c_str(), q->q_type(i).c_str());
       }
       printf("]: \n");
+      */
 
       delete n;
     }
@@ -150,11 +227,9 @@ namespace devourer {
       this->last_ts_ = ts;
     }
 
-    // const uint8_t *ptr = reinterpret_cast<const uint8_t*>(key.ptr());
-    // for(size_t i = 0; i < key.len(); i++) { debug(true, "%d) %02x", i, ptr[i]); }
+    Query *q = dynamic_cast<Query*>
+      (this->query_table_.get(key.hash(), key.ptr(), key.len()));
 
-    LRUHash::Node *n = this->query_table_.get(key.hash(), key.ptr(), key.len());
-    Query *q = dynamic_cast<Query*>(n);
     if (qflag == 0) {
       // Handling DNS query.
       if (!q) {
@@ -164,7 +239,8 @@ namespace devourer {
         q->set_ts(p.ts());
         size_t max = p.value_size("dns.qd_name");
         for(size_t i = 0; i < max; i++) {
-          q->add_question(p.value("dns.qd_name", i).repr(), p.value("dns.qd_type", i).repr());
+          q->add_question(p.value("dns.qd_name", i).repr(), 
+                          p.value("dns.qd_type", i).repr());
         }
         this->query_table_.put(query_ttl, q);
       } else {
@@ -173,23 +249,35 @@ namespace devourer {
 
     } else {
       // Handling DNS response.
+      struct timeval tv = {0, 0};
+      tv.tv_sec = q->last_ts();
+
       if (q) {
         double ts = p.ts() - q->last_ts();
-
-        object::Map map;
-        map.put("ts", q->last_ts());
-        map.put("client", q->client());
-        map.put("server", q->server());
+        object::Map *map = new object::Map();
+        map->put("ts", q->last_ts());
+        map->put("client", q->client());
+        map->put("server", q->server());
+        map->put("q_name", q->q_name(0));
         /*
-        for(size_t i = 0; i < q->q_count(); i++) {
-            printf("%s(%s), ", q->q_name(i).c_str(), q->q_type(i).c_str());
+          object::Array *array = new object::Array();
+          for(size_t i = 0; i < q->q_count(); i++) {
+          array->push(q->q_name(i));
+          // printf("%s(%s), ", , q->q_type(i).c_str());
           }
+          map->put("q_name", array);
         */
-        map.put("latency", ts);
-        this->write_stream(map);
+        map->put("latency", ts);
+        this->emit("dns.latency", map, &tv);
         q->set_has_reply(true);
       } else {
-        debug(1, "not found");
+        object::Map *map = new object::Map();
+        map->put("ts", p.ts());
+        map->put("client", p.dst_addr());
+        map->put("server", p.src_addr());
+        map->put("q_name", p.value("dns.qd_name").repr());
+        map->put("type", "miss");
+        this->emit("dns.invalid", map, &tv);
       }
     }
   }
@@ -216,14 +304,8 @@ void Devourer::set_fluentd(const std::string &dst) throw(devourer::Exception) {
   size_t pos;
   if(std::string::npos != (pos = dst.find(":", 0))) {
     std::string host = dst.substr(0, pos);
-    std::string s_port = dst.substr(pos + 1);
-    char *e;
-    int port = strtol(s_port.c_str(), &e, 0);
-    if (*e != '\0') {
-      throw new devourer::Exception("Fluentd option format must be 'hostname:port'");
-    }
+    std::string port = dst.substr(pos + 1);
     this->stream_ = new devourer::FluentdStream(host, port);
-
   } else {
     throw new devourer::Exception("Fluentd option format must be 'hostname:port'");
   }

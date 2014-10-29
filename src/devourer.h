@@ -53,7 +53,8 @@ namespace devourer {
     Stream() {}
     virtual ~Stream() {}
     virtual void setup() = 0;
-    virtual void write(const object::Object &obj) throw(Exception) = 0;
+    virtual void write(const std::string &tag, object::Object *obj, 
+                       const struct timeval &ts) throw(Exception) = 0;
   };
 
   class FileStream : public Stream {
@@ -65,20 +66,23 @@ namespace devourer {
     FileStream(const std::string &fpath);
     virtual ~FileStream();
     void setup();
-    void write(const object::Object &obj) throw(Exception);
+    void write(const std::string &tag, object::Object *obj, 
+               const struct timeval &ts) throw(Exception);
   };
 
   class FluentdStream : public Stream {
   private:
     std::string host_;
-    int port_;
+    std::string port_;
     int sock_;
+    const static bool DBG;
 
   public:
-    FluentdStream(const std::string &host, int port);
+    FluentdStream(const std::string &host, const std::string &port);
     virtual ~FluentdStream();
     void setup();
-    void write(const object::Object &obj) throw(Exception);
+    void write(const std::string &tag, object::Object *obj, 
+               const struct timeval &ts) throw(Exception);
   };
 
 
@@ -88,8 +92,8 @@ namespace devourer {
     Stream *stream_;
 
   protected:
-    void write_stream(const object::Object &obj);
-
+    void emit(const std::string &tag, object::Object *obj,
+              struct timeval *ts = NULL);
   public:
     Plugin() : stream_(NULL) {}
     virtual ~Plugin() {}

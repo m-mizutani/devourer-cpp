@@ -62,6 +62,9 @@ int devourer_main(int argc, char *argv[]) {
     if (opt.is_set("log")) {
       devourer->set_logfile(opt["log"]);
     }
+    if (opt.is_set("fluentd")) {
+      devourer->set_fluentd(opt["fluentd"]);
+    }
 
     devourer->start();
   } catch (devourer::Exception &e) {

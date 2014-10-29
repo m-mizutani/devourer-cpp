@@ -49,7 +49,7 @@ namespace devourer {
 
     class Map : public Object {
     private:
-      std::map<std::string, Object *> map_;
+      std::map<std::string, const Object *> map_;
       void overwrite(const std::string &key, Object *obj);
 
     public:
@@ -60,6 +60,19 @@ namespace devourer {
       void put(const std::string &key, int64_t val);
       void put(const std::string &key, double val);
       void put(const std::string &key, Object *obj);
+    };
+
+    class Array : public Object {
+    private:
+      std::vector<const Object *> array_;
+    public:
+      Array();
+      ~Array();
+      void to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const;
+      void push(const std::string &val);
+      void push(int64_t val);
+      void push(double val);
+      void push(Object *obj);
     };
 
     class Fixnum : public Object {

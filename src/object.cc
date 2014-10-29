@@ -28,6 +28,9 @@
 
 namespace devourer {
   namespace object {
+    // ------------------------------------------------------
+    // object::Map
+    //
     Map::Map() {
     }
     Map::~Map() {
@@ -70,12 +73,55 @@ namespace devourer {
       this->overwrite(key, obj);
     }
 
+    // ------------------------------------------------------
+    // object::Array
+    //
+    Array::Array() {
+    }
+    Array::~Array() {
+      for(size_t i = 0; i < this->array_.size(); i++) {
+        delete this->array_[i];
+      }
+    }
+    void Array::to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const {
+      pk->pack_array(this->array_.size());
+      for(size_t i = 0; i < this->array_.size(); i++) {
+        this->array_[i]->to_msgpack(pk);
+      }
+    }
+    void Array::push(const std::string &val) {
+      Object *obj = new String(val);
+      this->array_.push_back(obj);
+    }
+    void Array::push(int64_t val) {
+      Object *obj = new Fixnum(val);
+      this->array_.push_back(obj);
+    }
+    void Array::push(double val) {
+      Object *obj = new Float(val);
+      this->array_.push_back(obj);
+    }
+    void Array::push(Object *obj) {
+      this->array_.push_back(obj);
+    }
+
+    // ------------------------------------------------------
+    // object::Fixnum
+    //
     void Fixnum::to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const {
       pk->pack(this->val_);
     }
+
+    // ------------------------------------------------------
+    // object::Float
+    //
     void Float::to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const {
       pk->pack(this->val_);
     }
+
+    // ------------------------------------------------------
+    // object::String
+    //
     void String::to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const {
       pk->pack(this->val_);
     }
