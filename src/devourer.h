@@ -53,7 +53,7 @@ namespace devourer {
     Stream() {}
     virtual ~Stream() {}
     virtual void setup() = 0;
-    virtual void write(const std::string &tag, object::Object *obj, 
+    virtual void emit(const std::string &tag, object::Object *obj, 
                        const struct timeval &ts) throw(Exception) = 0;
   };
 
@@ -66,7 +66,7 @@ namespace devourer {
     FileStream(const std::string &fpath);
     virtual ~FileStream();
     void setup();
-    void write(const std::string &tag, object::Object *obj, 
+    void emit(const std::string &tag, object::Object *obj, 
                const struct timeval &ts) throw(Exception);
   };
 
@@ -81,7 +81,7 @@ namespace devourer {
     FluentdStream(const std::string &host, const std::string &port);
     virtual ~FluentdStream();
     void setup();
-    void write(const std::string &tag, object::Object *obj, 
+    void emit(const std::string &tag, object::Object *obj, 
                const struct timeval &ts) throw(Exception);
   };
 
@@ -152,6 +152,7 @@ namespace devourer {
       const std::string& server() { return this->server_; }
     };
 
+    static const bool DBG;
     static const std::string recv_event_;
 
     time_t last_ts_;

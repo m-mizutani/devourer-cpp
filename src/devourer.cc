@@ -50,11 +50,11 @@ namespace devourer {
     this->fd_ = ::open(this->fpath_.c_str(), O_WRONLY|O_CREAT, 0644);
     if (this->fd_ < 0) {
       std::string err(strerror(errno));
-      throw new Exception("FileStream Error: " + err);
+      throw Exception("FileStream Error: " + err);
     }
   }
-  void FileStream::write(const std::string &tag, object::Object *obj, 
-                         const struct timeval &ts) throw(Exception) {
+  void FileStream::emit(const std::string &tag, object::Object *obj, 
+                        const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
     obj->to_msgpack(&pk);
@@ -85,7 +85,7 @@ namespace devourer {
     if (0 != (r = getaddrinfo(this->host_.c_str(), this->port_.c_str(), 
                               &hints, &result))) {
       std::string errmsg(gai_strerror(r));
-      throw new Exception("getaddrinfo error: " + errmsg);
+      throw Exception("getaddrinfo error: " + errmsg);
     }
 
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -106,13 +106,13 @@ namespace devourer {
     }
 
     if (rp == NULL) {
-      throw new Exception("no avaiable address for " + this->host_);
+      throw Exception("no avaiable address for " + this->host_);
     }
     freeaddrinfo(result);
 
   }
-  void FluentdStream::write(const std::string &tag, object::Object *obj,
-                            const struct timeval &ts) throw(Exception) {
+  void FluentdStream::emit(const std::string &tag, object::Object *obj,
+                           const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
     object::Array arr;
@@ -133,14 +133,13 @@ namespace devourer {
 
   void Plugin::emit(const std::string &tag, object::Object *obj,
                             struct timeval *ts) {
-
     if (this->stream_) {
       if (ts) {
-        this->stream_->write(tag, obj, *ts);
+        this->stream_->emit(tag, obj, *ts);
       } else {
         struct timeval now_ts;
         gettimeofday(&now_ts, NULL);
-        this->stream_->write(tag, obj, now_ts);
+        this->stream_->emit(tag, obj, now_ts);
       }
     }
   }
@@ -186,6 +185,7 @@ namespace devourer {
 
 
   const std::string DnsTx::recv_event_ = "dns.packet";
+  const bool DnsTx::DBG = false;
 
   DnsTx::DnsTx() : last_ts_(0), query_table_(600) {
   }
@@ -230,8 +230,10 @@ namespace devourer {
     Query *q = dynamic_cast<Query*>
       (this->query_table_.get(key.hash(), key.ptr(), key.len()));
 
+    debug(DBG, "flag:%d, query %p", qflag, q);
     if (qflag == 0) {
       // Handling DNS query.
+      // debug(true, "%s -> %s", p.src_addr().c_str(), p.dst_addr().c_str());
       if (!q) {
         // Query is not found.
         q = new Query(hv, tx_id);
@@ -275,11 +277,11 @@ namespace devourer {
         for(size_t i = 0; i < an_max; i++) {
           object::Map *m = new object::Map();
           m->put("client", p.dst_addr());
-          m->put("server", p.dst_addr());
+          m->put("server", p.src_addr());
           m->put("name", p.value("dns.an_name", i).repr());
           m->put("type", p.value("dns.an_type", i).repr());
           m->put("data", p.value("dns.an_data", i).repr());
-          this->emit("dns.log", map, &tv);
+          this->emit("dns.log", m, &tv);
         }
 
       } else {
@@ -337,10 +339,10 @@ void Devourer::start() throw(devourer::Exception) {
   }
 
   if (!this->sw_) {
-    throw new devourer::Exception("Fatal error");
+    throw devourer::Exception("Fatal error");
   }
   if (!this->sw_->ready()) {
-    throw new devourer::Exception(this->sw_->errmsg());
+    throw devourer::Exception(this->sw_->errmsg());
   }
 
   // Setup output stream.
@@ -355,7 +357,7 @@ void Devourer::start() throw(devourer::Exception) {
     if (!ev.empty()) {
       swarm::hdlr_id hid = this->sw_->set_handler(ev, plugin);
       if (hid == swarm::HDLR_NULL) {
-        throw new devourer::Exception(this->sw_->errmsg());
+        throw devourer::Exception(this->sw_->errmsg());
       }
     }
 
@@ -364,7 +366,7 @@ void Devourer::start() throw(devourer::Exception) {
       swarm::task_id tid =
         this->sw_->set_periodic_task(plugin, static_cast<float>(interval));
       if (tid == swarm::TASK_NULL) {
-        throw new devourer::Exception(this->sw_->errmsg());
+        throw devourer::Exception(this->sw_->errmsg());
       }
     }
 

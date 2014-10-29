@@ -67,8 +67,11 @@ int devourer_main(int argc, char *argv[]) {
     }
 
     devourer->start();
-  } catch (devourer::Exception &e) {
+  } catch (const devourer::Exception &e) {
     std::cerr << "Devourer Error: " << e.what() << std::endl;
+    return false;
+  } catch (std::exception *e) {
+    std::cerr << "Devourer Error: " << e->what() << std::endl;
     return false;
   }
 

@@ -25,6 +25,7 @@
  */
 
 #include "./object.h"
+#include "./debug.h"
 
 namespace devourer {
   namespace object {
@@ -86,6 +87,8 @@ namespace devourer {
     void Array::to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const {
       pk->pack_array(this->array_.size());
       for(size_t i = 0; i < this->array_.size(); i++) {
+        // object::Map *map = dynamic_cast<object::Map*>(this->array_[i]);
+        // debug(1, "n = %p", map);
         this->array_[i]->to_msgpack(pk);
       }
     }

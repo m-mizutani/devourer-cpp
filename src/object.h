@@ -64,7 +64,7 @@ namespace devourer {
 
     class Array : public Object {
     private:
-      std::vector<const Object *> array_;
+      std::vector<Object *> array_;
     public:
       Array();
       ~Array();
