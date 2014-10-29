@@ -100,7 +100,7 @@ namespace devourer {
         inet_ntop(rp->ai_family, &addr_in->sin_addr.s_addr, buf, 
                   rp->ai_addrlen);
 
-        debug(true, "connected to %s", buf);
+        debug(DBG, "connected to %s", buf);
         break;
       }
     }
@@ -270,13 +270,24 @@ namespace devourer {
         map->put("latency", ts);
         this->emit("dns.latency", map, &tv);
         q->set_has_reply(true);
+
+        size_t an_max = p.value_size("dns.an_name");
+        for(size_t i = 0; i < an_max; i++) {
+          object::Map *m = new object::Map();
+          m->put("client", p.dst_addr());
+          m->put("server", p.dst_addr());
+          m->put("name", p.value("dns.an_name", i).repr());
+          m->put("type", p.value("dns.an_type", i).repr());
+          m->put("data", p.value("dns.an_data", i).repr());
+          this->emit("dns.log", map, &tv);
+        }
+
       } else {
         object::Map *map = new object::Map();
         map->put("ts", p.ts());
         map->put("client", p.dst_addr());
         map->put("server", p.src_addr());
         map->put("q_name", p.value("dns.qd_name").repr());
-        map->put("type", "miss");
         this->emit("dns.invalid", map, &tv);
       }
     }
@@ -315,24 +326,29 @@ void Devourer::set_logfile(const std::string &fpath) throw(devourer::Exception) 
 }
 
 void Devourer::start() throw(devourer::Exception) {
+  // Create a new Swarm instance.
   switch(this->src_) {
-  case devourer::PCAP_FILE: this->sw_ = new swarm::SwarmFile(this->target_); break;
-  case devourer::INTERFACE: this->sw_ = new swarm::SwarmDev(this->target_); break;
+  case devourer::PCAP_FILE:
+    this->sw_ = new swarm::SwarmFile(this->target_);
+    break;
+  case devourer::INTERFACE:
+    this->sw_ = new swarm::SwarmDev(this->target_);
+    break;
   }
 
   if (!this->sw_) {
     throw new devourer::Exception("Fatal error");
   }
-
   if (!this->sw_->ready()) {
     throw new devourer::Exception(this->sw_->errmsg());
   }
 
-
+  // Setup output stream.
   if (this->stream_) {
     this->stream_->setup();
   }
 
+  
   devourer::Plugin *plugin = new devourer::DnsTx();
   {
     std::string ev = plugin->recv_event();
