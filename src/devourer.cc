@@ -196,15 +196,19 @@ namespace devourer {
   void DnsTx::flush_query() {
     LRUHash::Node *n;
     while(NULL != (n = this->query_table_.pop())) {
-      /*
       Query *q = dynamic_cast<Query*>(n);
 
-      printf("TIMEOUT %f %s -> %s [", q->last_ts(), q->client().c_str(), q->server().c_str());
-      for(size_t i = 0; i < q->q_count(); i++) {
-        printf("%s(%s), ", q->q_name(i).c_str(), q->q_type(i).c_str());
+      if(!(q->has_reply())) {
+        struct timeval tv = {0, 0};
+        tv.tv_sec = q->last_ts();
+        object::Map *map = new object::Map();
+        map->put("ts", q->last_ts());
+        map->put("client", q->client());
+        map->put("server", q->server());
+        map->put("q_name", q->q_name(0));
+        map->put("type", "timeout");
+        this->emit("dns.invalid", map, &tv);
       }
-      printf("]: \n");
-      */
 
       delete n;
     }
@@ -290,6 +294,7 @@ namespace devourer {
         map->put("client", p.dst_addr());
         map->put("server", p.src_addr());
         map->put("q_name", p.value("dns.qd_name").repr());
+        map->put("type", "miss");
         this->emit("dns.invalid", map, &tv);
       }
     }
