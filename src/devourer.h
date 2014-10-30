@@ -24,6 +24,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef SRC_DEVOURER_H__
+#define SRC_DEVOURER_H__
+
 #include <exception>
 #include <vector>
 #include <msgpack.hpp>
@@ -47,45 +50,7 @@ namespace devourer {
     INTERFACE = 2,
   };
 
-
-  class Stream {
-  public:
-    Stream() {}
-    virtual ~Stream() {}
-    virtual void setup() = 0;
-    virtual void emit(const std::string &tag, object::Object *obj, 
-                       const struct timeval &ts) throw(Exception) = 0;
-  };
-
-  class FileStream : public Stream {
-  private:
-    std::string fpath_;
-    int fd_;
-
-  public:
-    FileStream(const std::string &fpath);
-    virtual ~FileStream();
-    void setup();
-    void emit(const std::string &tag, object::Object *obj, 
-               const struct timeval &ts) throw(Exception);
-  };
-
-  class FluentdStream : public Stream {
-  private:
-    std::string host_;
-    std::string port_;
-    int sock_;
-    const static bool DBG;
-
-  public:
-    FluentdStream(const std::string &host, const std::string &port);
-    virtual ~FluentdStream();
-    void setup();
-    void emit(const std::string &tag, object::Object *obj, 
-               const struct timeval &ts) throw(Exception);
-  };
-
-
+  class Stream;
 
   class Plugin : public swarm::Handler, public swarm::Task {
   private:
@@ -186,3 +151,6 @@ public:
   void enable_verbose();
   void start() throw(devourer::Exception);
 };
+
+
+#endif   // SRC_DEVOURER_H__

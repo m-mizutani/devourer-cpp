@@ -24,111 +24,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/stat.h> 
-#include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-
-
 #include <iostream>
 #include <swarm.h>
 #include "./devourer.h"
 #include "./object.h"
+#include "./stream.h"
 #include "./debug.h"
 
 namespace devourer {
-  FileStream::FileStream(const std::string &fpath) : fpath_(fpath) {
-  }
-  FileStream::~FileStream() {
-  }
-  void FileStream::setup() {
-    this->fd_ = ::open(this->fpath_.c_str(), O_WRONLY|O_CREAT, 0644);
-    if (this->fd_ < 0) {
-      std::string err(strerror(errno));
-      throw Exception("FileStream Error: " + err);
-    }
-  }
-  void FileStream::emit(const std::string &tag, object::Object *obj, 
-                        const struct timeval &ts) throw(Exception) {
-    msgpack::sbuffer buf;
-    msgpack::packer <msgpack::sbuffer> pk (&buf);
-    obj->to_msgpack(&pk);
-    ::write(this->fd_, buf.data(), buf.size());
-  }
-
-
-  const bool FluentdStream::DBG = false;
-
-  FluentdStream::FluentdStream(const std::string &host, 
-                               const std::string &port) : 
-    host_(host), port_(port) {
-  }
-  FluentdStream::~FluentdStream() {
-  }
-  void FluentdStream::setup() {
-    debug(DBG, "host=%s, port=%s", this->host_.c_str(), this->port_.c_str());
-
-    struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = 0;
-    hints.ai_protocol = 0;
-    
-    int r;
-    if (0 != (r = getaddrinfo(this->host_.c_str(), this->port_.c_str(), 
-                              &hints, &result))) {
-      std::string errmsg(gai_strerror(r));
-      throw Exception("getaddrinfo error: " + errmsg);
-    }
-
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-      this->sock_ = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-      if (this->sock_ == -1) {
-        continue;
-      }
-
-      if (connect(this->sock_, rp->ai_addr, rp->ai_addrlen) != -1) {
-        char buf[INET6_ADDRSTRLEN];
-        struct sockaddr_in *addr_in = (struct sockaddr_in *) rp->ai_addr;
-        inet_ntop(rp->ai_family, &addr_in->sin_addr.s_addr, buf, 
-                  rp->ai_addrlen);
-
-        debug(DBG, "connected to %s", buf);
-        break;
-      }
-    }
-
-    if (rp == NULL) {
-      throw Exception("no avaiable address for " + this->host_);
-    }
-    freeaddrinfo(result);
-
-  }
-  void FluentdStream::emit(const std::string &tag, object::Object *obj,
-                           const struct timeval &ts) throw(Exception) {
-    msgpack::sbuffer buf;
-    msgpack::packer <msgpack::sbuffer> pk (&buf);
-    object::Array arr;
-    object::Array *msg_set = new object::Array();
-    object::Array *msg = new object::Array();
-    std::string tag_prefix("devourer.");
-
-    arr.push(tag_prefix + tag);
-    arr.push(msg_set);
-    msg_set->push(msg);
-    msg->push(static_cast<int64_t>(ts.tv_sec));
-    msg->push(obj);
-
-    arr.to_msgpack(&pk);
-    ::write(this->sock_, buf.data(), buf.size());
-  }
 
 
   void Plugin::emit(const std::string &tag, object::Object *obj,
