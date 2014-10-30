@@ -1,4 +1,4 @@
-Devourer
+Devourer: Know your traffic
 ========
 
 Devourer is live packet capture and statistics tool for multipurpose.
