@@ -256,9 +256,9 @@ namespace devourer {
     } else {
       // Handling DNS response.
       struct timeval tv = {0, 0};
-      tv.tv_sec = q->last_ts();
 
       if (q) {
+        tv.tv_sec = q->last_ts();
         double ts = p.ts() - q->last_ts();
         object::Map *map = new object::Map();
         map->put("ts", q->last_ts());
@@ -290,6 +290,7 @@ namespace devourer {
 
       } else {
         object::Map *map = new object::Map();
+        tv.tv_sec = p.ts();
         map->put("ts", p.ts());
         map->put("client", p.dst_addr());
         map->put("server", p.src_addr());
