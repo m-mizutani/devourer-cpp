@@ -206,8 +206,8 @@ namespace devourer {
         map->put("client", q->client());
         map->put("server", q->server());
         map->put("q_name", q->q_name(0));
-        map->put("type", "timeout");
-        this->emit("dns.invalid", map, &tv);
+        map->put("status", "timeout");
+        this->emit("dns.tx", map, &tv);
       }
 
       delete n;
@@ -273,8 +273,9 @@ namespace devourer {
           }
           map->put("q_name", array);
         */
+        map->put("status", "success");
         map->put("latency", ts);
-        this->emit("dns.latency", map, &tv);
+        this->emit("dns.tx", map, &tv);
         q->set_has_reply(true);
 
         size_t an_max = p.value_size("dns.an_name");
@@ -295,8 +296,8 @@ namespace devourer {
         map->put("client", p.dst_addr());
         map->put("server", p.src_addr());
         map->put("q_name", p.value("dns.qd_name").repr());
-        map->put("type", "miss");
-        this->emit("dns.invalid", map, &tv);
+        map->put("status", "miss");
+        this->emit("dns.tx", map, &tv);
       }
     }
   }
