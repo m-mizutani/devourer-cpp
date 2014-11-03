@@ -52,7 +52,7 @@ namespace devourer {
 
   class Stream;
 
-  class Plugin : public swarm::Handler, public swarm::Task {
+  class Module : public swarm::Handler, public swarm::Task {
   private:
     Stream *stream_;
 
@@ -60,78 +60,13 @@ namespace devourer {
     void emit(const std::string &tag, object::Object *obj,
               struct timeval *ts = NULL);
   public:
-    Plugin() : stream_(NULL) {}
-    virtual ~Plugin() {}
+    Module() : stream_(NULL) {}
+    virtual ~Module() {}
     virtual const std::string& recv_event() const = 0;
     virtual int task_interval() const = 0;
     void set_stream(Stream *stream) { this->stream_ = stream; }
   };
 
-
-  class DnsTx : public Plugin {
-  private:
-    class QueryKey {
-    private:
-      uint64_t key_[2];
-
-    public:
-      QueryKey(uint64_t hv, uint32_t tx_id) {
-        this->key_[0] = hv;
-        this->key_[1] = static_cast<uint64_t>(tx_id);
-      }
-      const uint64_t *ptr() const { return &(this->key_[0]); }
-      size_t len() const { return sizeof(this->key_);}
-      uint64_t hash() const { return (this->key_[0] ^ this->key_[1]); }
-      bool match(const void *key, size_t len) {
-        return (len == sizeof(this->key_) && 0 == memcmp(key, this->key_, sizeof(this->key_)));
-      }
-    };
-
-    class Query : public LRUHash::Node {
-    private:
-      double last_ts_;
-      double ts_;
-      QueryKey key_;
-      bool has_reply_;
-      std::string client_, server_;
-      std::vector<std::string> name_;
-      std::vector<std::string> type_;
-
-    public:
-      Query(uint64_t hv, uint32_t tx_id);
-      ~Query();
-      uint64_t hash();
-      bool match(const void *key, size_t len);
-      void set_ts(double ts);
-      void set_last_ts(double ts);
-      double ts() const;
-      double last_ts() const;
-      void set_has_reply(bool has);
-      bool has_reply() const;
-      void set_flow(const std::string &client, const std::string &server);
-      void add_question(const std::string &name, const std::string &type);
-      size_t q_count() const { return this->name_.size(); }
-      const std::string& q_name(size_t i) { return this->name_[i]; }
-      const std::string& q_type(size_t i) { return this->type_[i]; }
-      const std::string& client() { return this->client_; }
-      const std::string& server() { return this->server_; }
-    };
-
-    static const bool DBG;
-    static const std::string recv_event_;
-
-    time_t last_ts_;
-    LRUHash query_table_;
-    void flush_query();
-
-  public:
-    DnsTx();
-    ~DnsTx();
-    void recv (swarm::ev_id eid, const  swarm::Property &p);
-    void exec (const struct timespec &ts);
-    const std::string& recv_event() const;
-    int task_interval() const;    
-  };
 
 }
 
@@ -140,8 +75,10 @@ private:
   std::string target_;
   devourer::Source src_;
   swarm::Swarm *sw_;
-  std::vector<devourer::Plugin*> plugins_;
+  std::vector<devourer::Module*> modules_;
   devourer::Stream *stream_;
+
+  void install_module(devourer::Module *module) throw(devourer::Exception);
 
 public:
   Devourer(const std::string &target, devourer::Source src);

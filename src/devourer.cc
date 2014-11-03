@@ -31,10 +31,10 @@
 #include "./stream.h"
 #include "./debug.h"
 
+#include "./modules/dns.h"
+
 namespace devourer {
-
-
-  void Plugin::emit(const std::string &tag, object::Object *obj,
+  void Module::emit(const std::string &tag, object::Object *obj,
                             struct timeval *ts) {
     if (this->stream_) {
       if (ts) {
@@ -45,172 +45,6 @@ namespace devourer {
         this->stream_->emit(tag, obj, now_ts);
       }
     }
-  }
-
-
-  DnsTx::Query::Query(uint64_t hv, uint32_t tx_id) : key_(hv, tx_id) {}
-  DnsTx::Query::~Query() {}
-  uint64_t DnsTx::Query::hash() {
-    return this->key_.hash();
-  }
-  bool DnsTx::Query::match(const void *key, size_t len) {
-    return this->key_.match(key, len);
-  }
-  void DnsTx::Query::set_ts(double ts) {
-    this->last_ts_ = ts;
-    this->ts_ = ts;
-  }
-  double DnsTx::Query::ts() const {
-    return this->ts_;
-  }
-  void DnsTx::Query::set_last_ts(double ts) {
-    this->ts_ = ts;
-  }
-  double DnsTx::Query::last_ts() const {
-    return this->last_ts_;
-  }
-  void DnsTx::Query::set_has_reply(bool has) {
-    this->has_reply_ = has;
-  }
-  bool DnsTx::Query::has_reply() const {
-    return this->has_reply_;
-  }
-  void DnsTx::Query::set_flow(const std::string &client, 
-                              const std::string &server) {
-    this->client_ = client;
-    this->server_ = server;
-  }
-  void DnsTx::Query::add_question(const std::string &name,
-                                  const std::string &type) {
-    this->name_.push_back(name);
-    this->type_.push_back(type);
-  }
-
-
-  const std::string DnsTx::recv_event_ = "dns.packet";
-  const bool DnsTx::DBG = false;
-
-  DnsTx::DnsTx() : last_ts_(0), query_table_(600) {
-  }
-  DnsTx::~DnsTx() {
-    this->query_table_.purge();
-    this->flush_query();
-  }
-  void DnsTx::flush_query() {
-    LRUHash::Node *n;
-    while(NULL != (n = this->query_table_.pop())) {
-      Query *q = dynamic_cast<Query*>(n);
-
-      if(!(q->has_reply())) {
-        struct timeval tv = {0, 0};
-        tv.tv_sec = q->last_ts();
-        object::Map *map = new object::Map();
-        map->put("ts", q->last_ts());
-        map->put("client", q->client());
-        map->put("server", q->server());
-        map->put("q_name", q->q_name(0));
-        map->put("status", "timeout");
-        this->emit("dns.tx", map, &tv);
-      }
-
-      delete n;
-    }
-  }
-  void DnsTx::recv (swarm::ev_id eid, const swarm::Property &p) {
-    uint32_t qflag = p.value("dns.query").uint32();
-    uint32_t tx_id = p.value("dns.tx_id").uint32();
-    uint64_t hv = p.hash_value();
-    DnsTx::QueryKey key(hv, tx_id);
-    const size_t query_ttl = 60;
-
-    // Progress tick of LRU hash table for queries.
-    time_t ts = p.tv_sec();
-    if (this->last_ts_ == 0) {
-      this->last_ts_ = ts; // Initialize
-    }
-
-    if (ts > this->last_ts_) {
-      this->query_table_.prog(ts - this->last_ts_);
-      this->last_ts_ = ts;
-    }
-
-    Query *q = dynamic_cast<Query*>
-      (this->query_table_.get(key.hash(), key.ptr(), key.len()));
-
-    debug(DBG, "flag:%d, query %p", qflag, q);
-    if (qflag == 0) {
-      // Handling DNS query.
-      // debug(true, "%s -> %s", p.src_addr().c_str(), p.dst_addr().c_str());
-      if (!q) {
-        // Query is not found.
-        q = new Query(hv, tx_id);
-        q->set_flow(p.src_addr(), p.dst_addr());
-        q->set_ts(p.ts());
-        size_t max = p.value_size("dns.qd_name");
-        for(size_t i = 0; i < max; i++) {
-          q->add_question(p.value("dns.qd_name", i).repr(), 
-                          p.value("dns.qd_type", i).repr());
-        }
-        this->query_table_.put(query_ttl, q);
-      } else {
-        q->set_last_ts(p.ts());
-      }
-
-    } else {
-      // Handling DNS response.
-      struct timeval tv = {0, 0};
-
-      if (q) {
-        tv.tv_sec = q->last_ts();
-        double ts = p.ts() - q->last_ts();
-        object::Map *map = new object::Map();
-        map->put("ts", q->last_ts());
-        map->put("client", q->client());
-        map->put("server", q->server());
-        map->put("q_name", q->q_name(0));
-        /*
-          object::Array *array = new object::Array();
-          for(size_t i = 0; i < q->q_count(); i++) {
-          array->push(q->q_name(i));
-          // printf("%s(%s), ", , q->q_type(i).c_str());
-          }
-          map->put("q_name", array);
-        */
-        map->put("status", "success");
-        map->put("latency", ts);
-        this->emit("dns.tx", map, &tv);
-        q->set_has_reply(true);
-
-        size_t an_max = p.value_size("dns.an_name");
-        for(size_t i = 0; i < an_max; i++) {
-          object::Map *m = new object::Map();
-          m->put("client", p.dst_addr());
-          m->put("server", p.src_addr());
-          m->put("name", p.value("dns.an_name", i).repr());
-          m->put("type", p.value("dns.an_type", i).repr());
-          m->put("data", p.value("dns.an_data", i).repr());
-          this->emit("dns.log", m, &tv);
-        }
-
-      } else {
-        object::Map *map = new object::Map();
-        tv.tv_sec = p.ts();
-        map->put("ts", p.ts());
-        map->put("client", p.dst_addr());
-        map->put("server", p.src_addr());
-        map->put("q_name", p.value("dns.qd_name").repr());
-        map->put("status", "miss");
-        this->emit("dns.tx", map, &tv);
-      }
-    }
-  }
-  void DnsTx::exec (const struct timespec &ts) {
-  }
-  const std::string& DnsTx::recv_event() const {
-    return DnsTx::recv_event_;
-  }
-  int DnsTx::task_interval() const {
-    return 1;
   }
 }
 
@@ -237,6 +71,28 @@ void Devourer::set_logfile(const std::string &fpath) throw(devourer::Exception) 
   this->stream_ = new devourer::FileStream(fpath);
 }
 
+void Devourer::install_module(devourer::Module *module) 
+  throw(devourer::Exception) {
+  std::string ev = module->recv_event();
+  if (!ev.empty()) {
+    swarm::hdlr_id hid = this->sw_->set_handler(ev, module);
+    if (hid == swarm::HDLR_NULL) {
+      throw devourer::Exception(this->sw_->errmsg());
+    }
+  }
+
+  int interval = module->task_interval();
+  if (interval > 0) {
+    swarm::task_id tid =
+      this->sw_->set_periodic_task(module, static_cast<float>(interval));
+    if (tid == swarm::TASK_NULL) {
+      throw devourer::Exception(this->sw_->errmsg());
+    }
+  }
+
+  module->set_stream(this->stream_);
+}
+
 void Devourer::start() throw(devourer::Exception) {
   // Create a new Swarm instance.
   switch(this->src_) {
@@ -261,29 +117,14 @@ void Devourer::start() throw(devourer::Exception) {
   }
 
   
-  devourer::Plugin *plugin = new devourer::DnsTx();
-  {
-    std::string ev = plugin->recv_event();
-    if (!ev.empty()) {
-      swarm::hdlr_id hid = this->sw_->set_handler(ev, plugin);
-      if (hid == swarm::HDLR_NULL) {
-        throw devourer::Exception(this->sw_->errmsg());
-      }
-    }
+  devourer::Module *module = new devourer::DnsTx();
+  this->install_module(module);
 
-    int interval = plugin->task_interval();
-    if (interval > 0) {
-      swarm::task_id tid =
-        this->sw_->set_periodic_task(plugin, static_cast<float>(interval));
-      if (tid == swarm::TASK_NULL) {
-        throw devourer::Exception(this->sw_->errmsg());
-      }
-    }
-
-    plugin->set_stream(this->stream_);
-  }
+  // struct timeval tv_start, tv_end, tv_diff;
 
   this->sw_->start();
-  delete plugin;
+
+
+  delete module;
   return;
 }
