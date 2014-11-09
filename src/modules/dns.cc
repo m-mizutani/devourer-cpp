@@ -72,7 +72,7 @@ namespace devourer {
   }
 
 
-  const std::string DnsTx::recv_event_ = "dns.packet";
+  const std::vector<std::string> DnsTx::recv_event_{"dns.packet"};
   const bool DnsTx::DBG = false;
 
   DnsTx::DnsTx() : last_ts_(0), query_table_(600) {
@@ -191,7 +191,7 @@ namespace devourer {
   }
   void DnsTx::exec (const struct timespec &ts) {
   }
-  const std::string& DnsTx::recv_event() const {
+  const std::vector<std::string>& DnsTx::recv_event() const {
     return DnsTx::recv_event_;
   }
   int DnsTx::task_interval() const {

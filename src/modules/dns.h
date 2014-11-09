@@ -86,8 +86,21 @@ namespace devourer {
       const std::string& server() { return this->server_; }
     };
 
+    class ARecord : public LRUHash::Node {
+    private:
+      
+    public:
+      
+    };
+
+    class CNameRecord : public LRUHash::Node {
+    private:
+      
+    public:
+    };
+    
     static const bool DBG;
-    static const std::string recv_event_;
+    static const std::vector<std::string> recv_event_;
 
     time_t last_ts_;
     LRUHash query_table_;
@@ -98,7 +111,7 @@ namespace devourer {
     ~DnsTx();
     void recv (swarm::ev_id eid, const  swarm::Property &p);
     void exec (const struct timespec &ts);
-    const std::string& recv_event() const;
+    const std::vector<std::string>& recv_event() const;
     int task_interval() const;    
   };
 

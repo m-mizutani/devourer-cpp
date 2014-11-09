@@ -32,6 +32,7 @@
 #include "./debug.h"
 
 #include "./modules/dns.h"
+#include "./modules/flow.h"
 
 namespace devourer {
   void Module::emit(const std::string &tag, object::Object *obj,
@@ -73,9 +74,9 @@ void Devourer::set_logfile(const std::string &fpath) throw(devourer::Exception) 
 
 void Devourer::install_module(devourer::Module *module) 
   throw(devourer::Exception) {
-  std::string ev = module->recv_event();
-  if (!ev.empty()) {
-    swarm::hdlr_id hid = this->sw_->set_handler(ev, module);
+  const std::vector<std::string> &ev_set = module->recv_event();
+  for(size_t i = 0; i < ev_set.size(); i++) {
+    swarm::hdlr_id hid = this->sw_->set_handler(ev_set[i], module);
     if (hid == swarm::HDLR_NULL) {
       throw devourer::Exception(this->sw_->errmsg());
     }
@@ -117,14 +118,20 @@ void Devourer::start() throw(devourer::Exception) {
   }
 
   
-  devourer::Module *module = new devourer::DnsTx();
-  this->install_module(module);
+  devourer::DnsTx *mod_dns = new devourer::DnsTx();
+  devourer::ModFlow *mod_flow = new devourer::ModFlow(mod_dns);
+  mod_flow->set_eid(this->sw_->lookup_event_id("ipv4.packet"),
+                    this->sw_->lookup_event_id("ipv6.packet"),
+                    this->sw_->lookup_event_id("dns.packet"));
+  this->install_module(mod_dns);
+  this->install_module(mod_flow);
 
   // struct timeval tv_start, tv_end, tv_diff;
 
   this->sw_->start();
 
 
-  delete module;
+  delete mod_dns;
+  delete mod_flow;
   return;
 }

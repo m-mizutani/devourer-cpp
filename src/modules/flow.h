@@ -24,70 +24,65 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_DEVOURER_H__
-#define SRC_DEVOURER_H__
+#ifndef SRC_MODULES_FLOW_H__
+#define SRC_MODULES_FLOW_H__
 
 #include <exception>
 #include <vector>
 #include <msgpack.hpp>
+#include <assert.h>
 #include <swarm.h>
 
-#include "./lru-hash.h"
-#include "./object.h"
+#include "../devourer.h"
+#include "../lru-hash.h"
+#include "../object.h"
 
 namespace devourer {
-  class Exception : public std::exception {
+  class DnsTx;
+  class ModFlow : public Module {
   private:
-    std::string errmsg_;
+    class Flow : public LRUHash::Node {
+    private:
+      uint64_t hv_;
+      void *key_;
+      size_t keylen_;
+      time_t created_at_;
+      time_t updated_at_;
+    public:
+      Flow(const swarm::Property &p);
+      ~Flow();
+      uint64_t hash() { return this->hv_; }
+      bool match(const void *key, size_t len) {
+        return (len == this->keylen_ && 0 == memcmp(key, this->key_, len));
+      }
+      void update(time_t ts) { this->updated_at_ = ts; }
+      time_t remain() const {
+        assert(this->created_at_ <= this->updated_at_);
+        return (this->updated_at_ - this->created_at_);
+      }
+    };
+
+    static const bool DBG;
+    static const std::vector<std::string> recv_events_;
+    DnsTx *mod_dns_;
+    time_t flow_timeout_;
+    LRUHash flow_table_;
+    swarm::ev_id ev_ipv4_;
+    swarm::ev_id ev_ipv6_;
+    swarm::ev_id ev_dns_;
+    time_t last_ts_;
+    
   public:
-    Exception(const std::string &errmsg) : errmsg_(errmsg) {}
-    ~Exception() {}
-    virtual const char* what() const throw() { return this->errmsg_.c_str(); }
+    ModFlow(DnsTx *mod_dns);
+    ~ModFlow();
+    void set_eid(swarm::ev_id ev_ipv4, swarm::ev_id ev_ipv6,
+                 swarm::ev_id ev_dns);
+    void recv (swarm::ev_id eid, const  swarm::Property &p);
+    void exec (const struct timespec &ts);
+    const std::vector<std::string>& recv_event() const;
+    int task_interval() const;    
   };
-
-  enum Source {
-    PCAP_FILE = 1,
-    INTERFACE = 2,
-  };
-
-  class Stream;
-
-  class Module : public swarm::Handler, public swarm::Task {
-  private:
-    Stream *stream_;
-
-  protected:
-    void emit(const std::string &tag, object::Object *obj,
-              struct timeval *ts = NULL);
-  public:
-    Module() : stream_(NULL) {}
-    virtual ~Module() {}
-    virtual const std::vector<std::string>& recv_event() const = 0;
-    virtual int task_interval() const = 0;
-    void set_stream(Stream *stream) { this->stream_ = stream; }
-  };
-
 
 }
 
-class Devourer {
-private:
-  std::string target_;
-  devourer::Source src_;
-  swarm::Swarm *sw_;
-  std::vector<devourer::Module*> modules_;
-  devourer::Stream *stream_;
-
-  void install_module(devourer::Module *module) throw(devourer::Exception);
-
-public:
-  Devourer(const std::string &target, devourer::Source src);
-  ~Devourer();
-  void set_fluentd(const std::string &dst) throw(devourer::Exception);
-  void set_logfile(const std::string &fpath) throw(devourer::Exception);
-  void enable_verbose();
-  void start() throw(devourer::Exception);
-};
-
-
-#endif   // SRC_DEVOURER_H__
+#endif   // SRC_MODULES_FLOW_H__
