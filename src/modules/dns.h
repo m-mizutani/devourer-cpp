@@ -37,7 +37,7 @@
 #include "../object.h"
 
 namespace devourer {
-  class DnsTx : public Module {
+  class ModDns : public Module {
   private:
     class QueryKey {
     private:
@@ -107,8 +107,8 @@ namespace devourer {
     void flush_query();
 
   public:
-    DnsTx();
-    ~DnsTx();
+    ModDns();
+    ~ModDns();
     void recv (swarm::ev_id eid, const  swarm::Property &p);
     void exec (const struct timespec &ts);
     const std::vector<std::string>& recv_event() const;

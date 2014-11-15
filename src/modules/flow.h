@@ -38,7 +38,7 @@
 #include "../object.h"
 
 namespace devourer {
-  class DnsTx;
+  class ModDns;
   class ModFlow : public Module {
   private:
     class Flow : public LRUHash::Node {
@@ -64,7 +64,7 @@ namespace devourer {
 
     static const bool DBG;
     static const std::vector<std::string> recv_events_;
-    DnsTx *mod_dns_;
+    ModDns *mod_dns_;
     time_t flow_timeout_;
     LRUHash flow_table_;
     swarm::ev_id ev_ipv4_;
@@ -73,7 +73,7 @@ namespace devourer {
     time_t last_ts_;
     
   public:
-    ModFlow(DnsTx *mod_dns);
+    ModFlow(ModDns *mod_dns);
     ~ModFlow();
     void set_eid(swarm::ev_id ev_ipv4, swarm::ev_id ev_ipv6,
                  swarm::ev_id ev_dns);

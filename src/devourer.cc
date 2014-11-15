@@ -118,7 +118,7 @@ void Devourer::start() throw(devourer::Exception) {
   }
 
   
-  devourer::DnsTx *mod_dns = new devourer::DnsTx();
+  devourer::ModDns *mod_dns = new devourer::ModDns();
   devourer::ModFlow *mod_flow = new devourer::ModFlow(mod_dns);
   mod_flow->set_eid(this->sw_->lookup_event_id("ipv4.packet"),
                     this->sw_->lookup_event_id("ipv6.packet"),

@@ -33,55 +33,55 @@
 #include "../debug.h"
 
 namespace devourer {
-  DnsTx::Query::Query(uint64_t hv, uint32_t tx_id) : key_(hv, tx_id) {}
-  DnsTx::Query::~Query() {}
-  uint64_t DnsTx::Query::hash() {
+  ModDns::Query::Query(uint64_t hv, uint32_t tx_id) : key_(hv, tx_id) {}
+  ModDns::Query::~Query() {}
+  uint64_t ModDns::Query::hash() {
     return this->key_.hash();
   }
-  bool DnsTx::Query::match(const void *key, size_t len) {
+  bool ModDns::Query::match(const void *key, size_t len) {
     return this->key_.match(key, len);
   }
-  void DnsTx::Query::set_ts(double ts) {
+  void ModDns::Query::set_ts(double ts) {
     this->last_ts_ = ts;
     this->ts_ = ts;
   }
-  double DnsTx::Query::ts() const {
+  double ModDns::Query::ts() const {
     return this->ts_;
   }
-  void DnsTx::Query::set_last_ts(double ts) {
+  void ModDns::Query::set_last_ts(double ts) {
     this->ts_ = ts;
   }
-  double DnsTx::Query::last_ts() const {
+  double ModDns::Query::last_ts() const {
     return this->last_ts_;
   }
-  void DnsTx::Query::set_has_reply(bool has) {
+  void ModDns::Query::set_has_reply(bool has) {
     this->has_reply_ = has;
   }
-  bool DnsTx::Query::has_reply() const {
+  bool ModDns::Query::has_reply() const {
     return this->has_reply_;
   }
-  void DnsTx::Query::set_flow(const std::string &client, 
+  void ModDns::Query::set_flow(const std::string &client, 
                               const std::string &server) {
     this->client_ = client;
     this->server_ = server;
   }
-  void DnsTx::Query::add_question(const std::string &name,
+  void ModDns::Query::add_question(const std::string &name,
                                   const std::string &type) {
     this->name_.push_back(name);
     this->type_.push_back(type);
   }
 
 
-  const std::vector<std::string> DnsTx::recv_event_{"dns.packet"};
-  const bool DnsTx::DBG = false;
+  const std::vector<std::string> ModDns::recv_event_{"dns.packet"};
+  const bool ModDns::DBG = false;
 
-  DnsTx::DnsTx() : last_ts_(0), query_table_(600) {
+  ModDns::ModDns() : last_ts_(0), query_table_(600) {
   }
-  DnsTx::~DnsTx() {
+  ModDns::~ModDns() {
     this->query_table_.purge();
     this->flush_query();
   }
-  void DnsTx::flush_query() {
+  void ModDns::flush_query() {
     LRUHash::Node *n;
     while(NULL != (n = this->query_table_.pop())) {
       Query *q = dynamic_cast<Query*>(n);
@@ -101,11 +101,11 @@ namespace devourer {
       delete n;
     }
   }
-  void DnsTx::recv (swarm::ev_id eid, const swarm::Property &p) {
+  void ModDns::recv (swarm::ev_id eid, const swarm::Property &p) {
     uint32_t qflag = p.value("dns.query").uint32();
     uint32_t tx_id = p.value("dns.tx_id").uint32();
     uint64_t hv = p.hash_value();
-    DnsTx::QueryKey key(hv, tx_id);
+    ModDns::QueryKey key(hv, tx_id);
     const size_t query_ttl = 60;
 
     // Progress tick of LRU hash table for queries.
@@ -189,12 +189,12 @@ namespace devourer {
       }
     }
   }
-  void DnsTx::exec (const struct timespec &ts) {
+  void ModDns::exec (const struct timespec &ts) {
   }
-  const std::vector<std::string>& DnsTx::recv_event() const {
-    return DnsTx::recv_event_;
+  const std::vector<std::string>& ModDns::recv_event() const {
+    return ModDns::recv_event_;
   }
-  int DnsTx::task_interval() const {
+  int ModDns::task_interval() const {
     return 1;
   }
 }

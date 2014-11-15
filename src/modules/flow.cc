@@ -40,7 +40,7 @@ namespace devourer {
   
   // ------------------------------------------------------------
   // class ModFlow
-  ModFlow::ModFlow(DnsTx *mod_dns) :
+  ModFlow::ModFlow(ModDns *mod_dns) :
     mod_dns_(mod_dns),
     flow_timeout_(600), flow_table_(3600), last_ts_(0)
   {
