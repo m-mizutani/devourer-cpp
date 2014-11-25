@@ -88,22 +88,52 @@ namespace devourer {
 
     class ARecord : public LRUHash::Node {
     private:
+      const std::string name_;
+      void *key_;
+      const size_t keylen_;
+      const time_t init_ts_;
+      time_t last_ts_;
+      uint64_t hv_;
       
     public:
-      
+      ARecord(const std::string &name, const void *key, size_t keylen,
+              time_t init_ts);
+      ~ARecord();
+      void update(time_t ts);
+      const std::string &name() { return this->name_; }
+      static uint64_t calc_hash(const void *key, size_t keylen);
+      uint64_t hash();
+      bool match(const void *key, size_t len);
     };
+
 
     class CNameRecord : public LRUHash::Node {
     private:
+      const std::string qname_;
+      const std::string cname_;
+      uint64_t hv_;
+      time_t last_ts_;
       
     public:
+      CNameRecord(const std::string &qname, const std::string &cname,
+                  time_t init_ts);
+      ~CNameRecord();
+      void update(time_t ts);
+      const std::string& qname() { return this->qname_; }
+      static uint64_t calc_hash(const std::string &name);
+      uint64_t hash();
+      bool match(const void *key, size_t len);
     };
+
     
     static const bool DBG;
     static const std::vector<std::string> recv_event_;
-
+    static const std::string null_str_;
+    
     time_t last_ts_;
     LRUHash query_table_;
+    LRUHash addr_table_;
+    LRUHash name_table_;
     void flush_query();
 
   public:
@@ -112,7 +142,10 @@ namespace devourer {
     void recv (swarm::ev_id eid, const  swarm::Property &p);
     void exec (const struct timespec &ts);
     const std::vector<std::string>& recv_event() const;
-    int task_interval() const;    
+    int task_interval() const;
+    // ToDo: add const to lookup functions
+    const std::string& lookup_addr(const void *addr, size_t len);
+    const std::string& lookup_name(const std::string& name);
   };
 
 }

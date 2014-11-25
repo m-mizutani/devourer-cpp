@@ -66,7 +66,7 @@ namespace devourer {
       this->last_ts_ = p.tv_sec();
     } else if (this->last_ts_ < p.tv_sec()) {
       time_t diff = p.tv_sec() - this->last_ts_;
-      debug(DBG, "tick: %u (%u)", p.tv_sec(), diff);
+      debug(DBG, "tick: %ld (%u)", p.tv_sec(), diff);
       this->last_ts_ = p.tv_sec();
       this->flow_table_.prog(diff);
 
@@ -92,8 +92,29 @@ namespace devourer {
       if (flow == NULL) {
         // TODO: catch bad_alloc
         flow = new Flow(p);
-        debug(DBG, "new flow [%016llX] %s->%s", p.hash_value(),
-              p.src_addr().c_str(), p.dst_addr().c_str());
+        size_t src_len, dst_len;
+        const void *src_addr = p.src_addr(&src_len);
+        const void *dst_addr = p.dst_addr(&dst_len);
+        const std::string &src =
+          this->mod_dns_->lookup_addr(src_addr, src_len);
+        const std::string &dst =
+          this->mod_dns_->lookup_addr(dst_addr, dst_len);
+        const std::string &src_q = this->mod_dns_->lookup_name(src);
+        const std::string &dst_q = this->mod_dns_->lookup_name(dst);
+          
+
+
+        /*
+        const uint8_t *sp = reinterpret_cast<const uint8_t*>(src_addr);
+        for(size_t i = 0; i < src_len; i++) {
+          printf("%u.", sp[i]);
+        }
+        printf("\n");
+        */
+
+        debug(DBG, "new flow [%016llX] %s(%s:%s)->%s(%s:%s)", p.hash_value(),
+              p.src_addr().c_str(), src.c_str(), src_q.c_str(),
+              p.dst_addr().c_str(), dst.c_str(), dst_q.c_str());
         this->flow_table_.put(this->flow_timeout_, flow);
       }
       flow->update(p.tv_sec()); 
