@@ -146,6 +146,7 @@ namespace devourer {
                                    const std::string &cname, time_t init_ts) :
     qname_(qname), cname_(cname), last_ts_(init_ts)
   {
+    debug(true, "reg: %s -> %s", qname.c_str(), cname.c_str());
   }
   ModDns::CNameRecord::~CNameRecord() {
   }
@@ -320,41 +321,38 @@ namespace devourer {
   }
 
   const std::string ModDns::null_str_;
-  const std::string& ModDns::lookup_addr(const void *addr, size_t len) {
+  const std::string& ModDns::resolv_addr(const void *addr, size_t len,
+                                         size_t recur_max) {
     assert(len == 4 || len == 16);
     uint64_t hv = ARecord::calc_hash(addr, len);
-    ARecord *rec = dynamic_cast<ARecord*>
+    ARecord *a_rec = dynamic_cast<ARecord*>
       (this->addr_table_.get(hv, addr, len));
 
-    /*
-    std::string saddr = v4addr(addr);
-    debug(false, "Lookup: %s, hv=%llu", saddr.c_str(), hv);
-    */
-    
-    if (rec) {
-      return rec->name();
-    } else {
-      return ModDns::null_str_;
-    }
-  }
+    if (a_rec) {
+      std::string name = a_rec->name();
+      CNameRecord *cname_rec = NULL;
 
-  const std::string& ModDns::lookup_name(const std::string& name) {
-    const void *key = name.c_str();
-    const size_t keylen = name.length();
-    uint64_t hv = CNameRecord::calc_hash(name);
-    CNameRecord *rec = dynamic_cast<CNameRecord*>
-      (this->name_table_.get(hv, key, keylen));
+      for (size_t i = 0; i < recur_max; i++) {
+        const void *key = name.c_str();
+        const size_t keylen = name.length();
+        uint64_t hv = CNameRecord::calc_hash(name);
+        CNameRecord *r =
+          dynamic_cast<CNameRecord*>(this->name_table_.get(hv, key, keylen));
+        if (r == NULL) {
+          break;
+        }
+        cname_rec = r;
+        name = cname_rec->qname();
+      }
 
-    /*
-    std::string saddr = v4addr(addr);
-    debug(false, "Lookup: %s, hv=%llu", saddr.c_str(), hv);
-    */
-    
-    if (rec) {
-      return rec->qname();
-    } else {
-      return ModDns::null_str_;
-    }
+      if (cname_rec) {
+        return cname_rec->qname();
+      } else {
+        return a_rec->name();
+      }
+    } 
+
+    return ModDns::null_str_;
   }
 
   void ModDns::exec (const struct timespec &ts) {

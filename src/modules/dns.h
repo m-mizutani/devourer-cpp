@@ -144,8 +144,8 @@ namespace devourer {
     const std::vector<std::string>& recv_event() const;
     int task_interval() const;
     // ToDo: add const to lookup functions
-    const std::string& lookup_addr(const void *addr, size_t len);
-    const std::string& lookup_name(const std::string& name);
+    const std::string& resolv_addr(const void *addr, size_t len,
+                                   size_t recur_max=32);
   };
 
 }

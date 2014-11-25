@@ -61,12 +61,13 @@ namespace devourer {
     this->ev_dns_  = ev_dns;    
   }
   void ModFlow::recv (swarm::ev_id eid, const swarm::Property &p) {
+    static const bool FLOW_DBG = false;
     // Eliminate timeout flow, and re-put flow if it updated.
     if (this->last_ts_ == 0) {
       this->last_ts_ = p.tv_sec();
     } else if (this->last_ts_ < p.tv_sec()) {
       time_t diff = p.tv_sec() - this->last_ts_;
-      debug(DBG, "tick: %ld (%u)", p.tv_sec(), diff);
+      debug(FLOW_DBG, "tick: %ld (%ld)", p.tv_sec(), diff);
       this->last_ts_ = p.tv_sec();
       this->flow_table_.prog(diff);
 
@@ -74,10 +75,10 @@ namespace devourer {
       while(NULL != (node = this->flow_table_.pop())) {
         Flow *flow = dynamic_cast<Flow*>(node);
         if (flow->remain() > 0) {
-          debug(DBG, "updating [%016llX]", flow->hash());
+          debug(FLOW_DBG, "updating [%016llX]", flow->hash());
           this->flow_table_.put(flow->remain(), flow);
         } else {
-          debug(DBG, "deleting [%016llX]", flow->hash());          
+          debug(FLOW_DBG, "deleting [%016llX]", flow->hash());          
           delete flow;
         }
       }
@@ -96,25 +97,14 @@ namespace devourer {
         const void *src_addr = p.src_addr(&src_len);
         const void *dst_addr = p.dst_addr(&dst_len);
         const std::string &src =
-          this->mod_dns_->lookup_addr(src_addr, src_len);
+          this->mod_dns_->resolv_addr(src_addr, src_len);
         const std::string &dst =
-          this->mod_dns_->lookup_addr(dst_addr, dst_len);
-        const std::string &src_q = this->mod_dns_->lookup_name(src);
-        const std::string &dst_q = this->mod_dns_->lookup_name(dst);
-          
+          this->mod_dns_->resolv_addr(dst_addr, dst_len);
 
-
-        /*
-        const uint8_t *sp = reinterpret_cast<const uint8_t*>(src_addr);
-        for(size_t i = 0; i < src_len; i++) {
-          printf("%u.", sp[i]);
-        }
-        printf("\n");
-        */
-
-        debug(DBG, "new flow [%016llX] %s(%s:%s)->%s(%s:%s)", p.hash_value(),
-              p.src_addr().c_str(), src.c_str(), src_q.c_str(),
-              p.dst_addr().c_str(), dst.c_str(), dst_q.c_str());
+        debug(true, "new flow %s(%s)->%s(%s)",
+              // p.hash_value(),
+              p.src_addr().c_str(), src.c_str(), 
+              p.dst_addr().c_str(), dst.c_str());
         this->flow_table_.put(this->flow_timeout_, flow);
       }
       flow->update(p.tv_sec()); 
