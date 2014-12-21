@@ -39,13 +39,14 @@
     struct timeval tv;                                        \
     struct timezone tz;                                       \
     FILE * out = stdout;                                      \
+    char *fpath = const_cast<char*>(__FILE__);                \
     if (X) {                                                  \
       gettimeofday (&tv, &tz);                                \
       localtime_r (&tv.tv_sec, &td);                          \
       fprintf (out, "(DEBUG %02d:%02d:%02d.%03d %s:%d %s) ",  \
                td.tm_hour, td.tm_min, td.tm_sec,              \
                static_cast <int> (tv.tv_usec / 1000),         \
-               __FILE__, __LINE__, __FUNCTION__);             \
+               basename(fpath), __LINE__, __FUNCTION__);      \
       fprintf (out, __VA_ARGS__);                             \
       fprintf (out, "\n");                                    \
       fflush (out);                                           \
