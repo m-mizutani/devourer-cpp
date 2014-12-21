@@ -21,7 +21,7 @@ TARGET_LINK_LIBRARIES(mod_devourer swarm msgpack)
 
 # Test code
 ADD_EXECUTABLE(devourer_test ${TESTSRCS})
-TARGET_LINK_LIBRARIES(devourer_test mod_devourer)
+TARGET_LINK_LIBRARIES(devourer_test mod_devourer pthread)
 
 # Application (CLI) code
 ADD_EXECUTABLE(devourer apps/cli.cc apps/optparse.cc)
