@@ -31,6 +31,7 @@
 #include "./stream.h"
 #include "./debug.h"
 
+#include "./module.h"
 #include "./modules/dns.h"
 #include "./modules/flow.h"
 
@@ -38,6 +39,7 @@ namespace devourer {
   void Module::emit(const std::string &tag, object::Object *obj,
                             struct timeval *ts) {
     if (this->stream_) {
+        
       if (ts) {
         this->stream_->emit(tag, obj, *ts);
       } else {

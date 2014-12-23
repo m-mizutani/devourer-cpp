@@ -29,10 +29,9 @@
 
 #include <exception>
 #include <vector>
-#include <msgpack.hpp>
 #include <assert.h>
-#include <swarm.h>
 
+#include "../module.h"
 #include "../devourer.h"
 #include "../lru-hash.h"
 #include "../object.h"

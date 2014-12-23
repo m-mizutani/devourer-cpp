@@ -42,7 +42,7 @@ namespace devourer {
     private:
       Node *next_, *prev_;  // double linked list for Bucket
       Node *link_;          // single linked list for TimeSlot
-      
+
     public:
       Node();
       virtual ~Node();

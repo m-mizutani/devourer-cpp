@@ -32,6 +32,7 @@
 #include <msgpack.hpp>
 #include <swarm.h>
 
+#include "../module.h"
 #include "../devourer.h"
 #include "../lru-hash.h"
 #include "../object.h"
