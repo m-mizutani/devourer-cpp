@@ -25,7 +25,6 @@
  */
 
 #include <vector>
-#include <swarm.h>
 #include "./devourer.h"
 #include "./optparse.h"
 

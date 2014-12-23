@@ -24,58 +24,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_DEVOURER_H__
-#define SRC_DEVOURER_H__
 
-#include <exception>
-#include <vector>
+#ifndef SRC_MODULE_H__
+#define SRC_MODULE_H__
 
-#include "./lru-hash.h"
-
+#include <swarm.h>
+#include "./stream.h"
 
 namespace devourer {
-  class Exception : public std::exception {
+  class Module : public swarm::Handler, public swarm::Task {
   private:
-    std::string errmsg_;
+    Stream *stream_;
+    
+  protected:
+    void emit(const std::string &tag, object::Object *obj,
+              struct timeval *ts = NULL);
   public:
-    Exception(const std::string &errmsg) : errmsg_(errmsg) {}
-    ~Exception() {}
-    virtual const char* what() const throw() { return this->errmsg_.c_str(); }
+    Module() : stream_(NULL) {}
+    virtual ~Module() = default;
+    virtual const std::vector<std::string>& recv_event() const = 0;
+    virtual int task_interval() const = 0;
+    void set_stream(Stream *stream) { this->stream_ = stream; }
   };
-
-  enum Source {
-    PCAP_FILE = 1,
-    INTERFACE = 2,
-  };
-
-  class Stream;
-
-  class Module;
 
 }
 
-namespace swarm {
-  class Swarm;
-}
 
-class Devourer {
-private:
-  std::string target_;
-  devourer::Source src_;
-  swarm::Swarm *sw_;
-  std::vector<devourer::Module*> modules_;
-  devourer::Stream *stream_;
-
-  void install_module(devourer::Module *module) throw(devourer::Exception);
-
-public:
-  Devourer(const std::string &target, devourer::Source src);
-  ~Devourer();
-  void set_fluentd(const std::string &dst) throw(devourer::Exception);
-  void set_logfile(const std::string &fpath) throw(devourer::Exception);
-  void enable_verbose();
-  void start() throw(devourer::Exception);
-};
-
-
-#endif   // SRC_DEVOURER_H__
+#endif  // SRC_MODULE_H__
