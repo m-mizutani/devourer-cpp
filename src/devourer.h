@@ -29,9 +29,7 @@
 
 #include <exception>
 #include <vector>
-
-#include "./lru-hash.h"
-
+#include <string>
 
 namespace devourer {
   class Exception : public std::exception {
