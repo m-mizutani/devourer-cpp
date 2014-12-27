@@ -12,7 +12,7 @@ SET(LIBRARY_OUTPUT_PATH    ${PROJECT_BINARY_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${INC_DIR} ./src)
 LINK_DIRECTORIES(${LIB_DIR})
-FILE(GLOB BASESRCS "src/*.cc" "src/modules/*.cc")
+FILE(GLOB BASESRCS "src/*.cc" "src/*.h" "src/modules/*.cc" "src/modules/*.h")
 FILE(GLOB TESTSRCS "test/*.cc")
 
 # Module code
