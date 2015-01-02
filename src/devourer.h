@@ -69,8 +69,11 @@ private:
 public:
   Devourer(const std::string &target, devourer::Source src);
   ~Devourer();
-  void set_fluentd(const std::string &dst) throw(devourer::Exception);
-  void set_output(const std::string &fpath) throw(devourer::Exception);
+  void set_fluentd(const std::string &dst, const std::string& filter="")
+  throw(devourer::Exception);
+  void set_output(const std::string &fpath,  const std::string& filter="")
+  throw(devourer::Exception);
+  void set_filter(const std::string &filter) throw(devourer::Exception);
   void enable_verbose();
   void start() throw(devourer::Exception);
 };

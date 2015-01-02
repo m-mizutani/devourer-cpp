@@ -38,6 +38,8 @@ int devourer_main(int argc, char *argv[]) {
     .help("Fluentd destination, e.g. 127.0.0.1:24224");
   psr.add_option("-o").dest("output")
     .help("Log file path, stdout if '-'");
+  psr.add_option("-t").dest("filter").set_default("")
+    .help("Tag filter with regular expression (e.g. dns\\..*");
   psr.add_option("-v").dest("verbose")
     .help("Verbose mode");
   
@@ -57,12 +59,13 @@ int devourer_main(int argc, char *argv[]) {
     return false;
   }
 
+  std::string filter = opt["filter"];
   try {
     if (opt.is_set("output")) {
-      devourer->set_output(opt["output"]);
+      devourer->set_output(opt["output"], filter);
     }
     if (opt.is_set("fluentd")) {
-      devourer->set_fluentd(opt["fluentd"]);
+      devourer->set_fluentd(opt["fluentd"], filter);
     }
 
     devourer->start();

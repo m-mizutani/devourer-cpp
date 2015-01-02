@@ -60,22 +60,27 @@ Devourer::~Devourer(){
   delete this->sw_;
 }
 
-void Devourer::set_fluentd(const std::string &dst) throw(devourer::Exception) {
+void Devourer::set_fluentd(const std::string &dst, const std::string &filter)
+throw(devourer::Exception) {
   size_t pos;
   if(std::string::npos != (pos = dst.find(":", 0))) {
     std::string host = dst.substr(0, pos);
     std::string port = dst.substr(pos + 1);
     this->stream_ = new devourer::FluentdStream(host, port);
+    this->stream_->set_filter(filter);
   } else {
-    throw new devourer::Exception("Fluentd option format must be 'hostname:port'");
+    throw new devourer::Exception("Fluentd option format must be "
+                                  "'hostname:port'");
   }
 }
 
-void Devourer::set_output(const std::string &fpath) throw(devourer::Exception) {
+void Devourer::set_output(const std::string &fpath, const std::string &filter)
+throw(devourer::Exception) {
   this->stream_ = new devourer::FileStream(fpath);
+  this->stream_->set_filter(filter);
 }
 
-void Devourer::install_module(devourer::Module *module) 
+void Devourer::install_module(devourer::Module *module)
   throw(devourer::Exception) {
   const std::vector<std::string> &ev_set = module->recv_event();
   for(size_t i = 0; i < ev_set.size(); i++) {

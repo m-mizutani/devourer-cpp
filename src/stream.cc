@@ -38,6 +38,32 @@
 #include "./debug.h"
 
 namespace devourer {
+  // -----------------------------------------------------------------
+  // class Stream
+  //
+  void Stream::emit(const std::string &tag, object::Object *obj,
+                    const struct timeval &ts) throw(Exception){
+    if (this->filter_ == nullptr ||
+        std::regex_match(tag.c_str(), *this->filter_)) {
+      this->output(tag, obj, ts);
+    }
+  }
+  void Stream::set_filter(const std::string &filter)
+  throw(devourer::Exception) {
+    try {
+      if (filter.length() > 0) {
+        this->filter_ = new std::regex(filter);
+      }
+    } catch (const std::regex_error &err) {
+      std::string msg("filter pattern error: ");
+      msg += err.what();
+      throw Exception(msg);
+    }
+  }
+  
+  // -----------------------------------------------------------------
+  // class FileStream
+  //
   FileStream::FileStream(const std::string &fpath) : fpath_(fpath) {
   }
   FileStream::~FileStream() {
@@ -55,8 +81,8 @@ namespace devourer {
       }
     }
   }
-  void FileStream::emit(const std::string &tag, object::Object *obj, 
-                        const struct timeval &ts) throw(Exception) {
+  void FileStream::output(const std::string &tag, object::Object *obj,
+                          const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
     
@@ -70,6 +96,9 @@ namespace devourer {
   }
 
 
+  // -----------------------------------------------------------------
+  // class Fluentdtream
+  //
   const bool FluentdStream::DBG = false;
 
   FluentdStream::FluentdStream(const std::string &host, 
@@ -119,8 +148,8 @@ namespace devourer {
     freeaddrinfo(result);
 
   }
-  void FluentdStream::emit(const std::string &tag, object::Object *obj,
-                           const struct timeval &ts) throw(Exception) {
+  void FluentdStream::output(const std::string &tag, object::Object *obj,
+                             const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
     object::Array arr;

@@ -27,17 +27,23 @@
 #ifndef SRC_STREAM_H__
 #define SRC_STREAM_H__
 
+#include <regex>
 #include "./object.h"
 #include "./devourer.h"
 
 namespace devourer {
   class Stream {
+  private:
+    std::regex *filter_;
+    virtual void output(const std::string &tag, object::Object *obj,
+                        const struct timeval &ts) throw(Exception) = 0;
   public:
-    Stream() {}
+    Stream() : filter_(nullptr) {}
     virtual ~Stream() {}
     virtual void setup() = 0;
-    virtual void emit(const std::string &tag, object::Object *obj, 
-                       const struct timeval &ts) throw(Exception) = 0;
+    void emit(const std::string &tag, object::Object *obj,
+              const struct timeval &ts) throw(Exception);
+    void set_filter(const std::string &filter) throw(Exception);
   };
 
   // -----------------------------------
@@ -45,13 +51,13 @@ namespace devourer {
   private:
     std::string fpath_;
     int fd_;
+    void output(const std::string &tag, object::Object *obj,
+                const struct timeval &ts) throw(Exception);
 
   public:
     FileStream(const std::string &fpath);
     virtual ~FileStream();
     void setup();
-    void emit(const std::string &tag, object::Object *obj, 
-               const struct timeval &ts) throw(Exception);
   };
 
   // -----------------------------------
@@ -66,8 +72,9 @@ namespace devourer {
     FluentdStream(const std::string &host, const std::string &port);
     virtual ~FluentdStream();
     void setup();
-    void emit(const std::string &tag, object::Object *obj, 
-               const struct timeval &ts) throw(Exception);
+    void output(const std::string &tag, object::Object *obj,
+                const struct timeval &ts) throw(Exception);
+    
   };
 
 }
