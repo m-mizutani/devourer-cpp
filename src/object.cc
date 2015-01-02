@@ -66,6 +66,11 @@ namespace devourer {
       Object *obj = new Fixnum(val);
       this->overwrite(key, obj);
     }
+    void Map::put(const std::string &key, int val) {
+      Object *obj = new Fixnum(val);
+      this->overwrite(key, obj);
+    }
+
     void Map::put(const std::string &key, double val) {
       Object *obj = new Float(val);
       this->overwrite(key, obj);

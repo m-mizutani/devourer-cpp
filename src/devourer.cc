@@ -70,7 +70,8 @@ void Devourer::set_fluentd(const std::string &dst) throw(devourer::Exception) {
     throw new devourer::Exception("Fluentd option format must be 'hostname:port'");
   }
 }
-void Devourer::set_logfile(const std::string &fpath) throw(devourer::Exception) {
+
+void Devourer::set_output(const std::string &fpath) throw(devourer::Exception) {
   this->stream_ = new devourer::FileStream(fpath);
 }
 
@@ -78,10 +79,12 @@ void Devourer::install_module(devourer::Module *module)
   throw(devourer::Exception) {
   const std::vector<std::string> &ev_set = module->recv_event();
   for(size_t i = 0; i < ev_set.size(); i++) {
-    swarm::hdlr_id hid = this->sw_->set_handler(ev_set[i], module);
+    swarm::ev_id eid = this->sw_->lookup_event_id(ev_set[i]);
+    swarm::hdlr_id hid = this->sw_->set_handler(eid, module);
     if (hid == swarm::HDLR_NULL) {
       throw devourer::Exception(this->sw_->errmsg());
     }
+    module->bind_event_id(ev_set[i], eid);
   }
 
   int interval = module->task_interval();
@@ -122,16 +125,10 @@ void Devourer::start() throw(devourer::Exception) {
   
   devourer::ModDns *mod_dns = new devourer::ModDns();
   devourer::ModFlow *mod_flow = new devourer::ModFlow(mod_dns);
-  mod_flow->set_eid(this->sw_->lookup_event_id("ipv4.packet"),
-                    this->sw_->lookup_event_id("ipv6.packet"),
-                    this->sw_->lookup_event_id("dns.packet"));
   this->install_module(mod_dns);
   this->install_module(mod_flow);
 
-  // struct timeval tv_start, tv_end, tv_diff;
-
   this->sw_->start();
-
 
   delete mod_dns;
   delete mod_flow;

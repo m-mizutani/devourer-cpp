@@ -70,7 +70,7 @@ public:
   Devourer(const std::string &target, devourer::Source src);
   ~Devourer();
   void set_fluentd(const std::string &dst) throw(devourer::Exception);
-  void set_logfile(const std::string &fpath) throw(devourer::Exception);
+  void set_output(const std::string &fpath) throw(devourer::Exception);
   void enable_verbose();
   void start() throw(devourer::Exception);
 };

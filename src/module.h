@@ -44,6 +44,8 @@ namespace devourer {
     virtual ~Module() = default;
     virtual const std::vector<std::string>& recv_event() const = 0;
     virtual int task_interval() const = 0;
+    virtual void bind_event_id(const std::string &ev_name, swarm::ev_id eid) {
+    }
     void set_stream(Stream *stream) { this->stream_ = stream; }
   };
 

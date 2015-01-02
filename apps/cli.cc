@@ -36,8 +36,8 @@ int devourer_main(int argc, char *argv[]) {
     .help("Interface to monitor on the fly");
   psr.add_option("-f").dest("fluentd")
     .help("Fluentd destination, e.g. 127.0.0.1:24224");
-  psr.add_option("-l").dest("log")
-    .help("Log file path");
+  psr.add_option("-o").dest("output")
+    .help("Log file path, stdout if '-'");
   psr.add_option("-v").dest("verbose")
     .help("Verbose mode");
   
@@ -58,8 +58,8 @@ int devourer_main(int argc, char *argv[]) {
   }
 
   try {
-    if (opt.is_set("log")) {
-      devourer->set_logfile(opt["log"]);
+    if (opt.is_set("output")) {
+      devourer->set_output(opt["output"]);
     }
     if (opt.is_set("fluentd")) {
       devourer->set_fluentd(opt["fluentd"]);

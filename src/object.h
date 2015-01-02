@@ -58,6 +58,7 @@ namespace devourer {
       void to_msgpack(msgpack::packer<msgpack::sbuffer> *pk) const;
       void put(const std::string &key, const std::string &val);
       void put(const std::string &key, int64_t val);
+      void put(const std::string &key, int val);
       void put(const std::string &key, double val);
       void put(const std::string &key, Object *obj);
     };

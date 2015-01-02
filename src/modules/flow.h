@@ -46,7 +46,15 @@ namespace devourer {
       void *key_;
       size_t keylen_;
       time_t created_at_;
+      time_t refreshed_at_;
       time_t updated_at_;
+      swarm::FlowDir init_dir_;
+      std::string l_addr_, r_addr_;
+      std::string l_name_, r_name_;
+      int l_port_, r_port_;
+      int l_pkt_, r_pkt_;
+      int l_size_, r_size_;
+      
     public:
       Flow(const swarm::Property &p);
       ~Flow();
@@ -54,10 +62,16 @@ namespace devourer {
       bool match(const void *key, size_t len) {
         return (len == this->keylen_ && 0 == memcmp(key, this->key_, len));
       }
-      void update(time_t ts) { this->updated_at_ = ts; }
+      void update(const swarm::Property &p);
+      void refresh(time_t tv_sec) {
+        this->refreshed_at_ = tv_sec;
+      }
       time_t remain() const {
-        assert(this->created_at_ <= this->updated_at_);
-        return (this->updated_at_ - this->created_at_);
+        if (this->refreshed_at_ <= this->updated_at_) {
+          return (this->updated_at_ - this->refreshed_at_);
+        } else {
+          return 0;
+        }
       }
     };
 
@@ -68,18 +82,17 @@ namespace devourer {
     LRUHash flow_table_;
     swarm::ev_id ev_ipv4_;
     swarm::ev_id ev_ipv6_;
-    swarm::ev_id ev_dns_;
     time_t last_ts_;
     
   public:
     ModFlow(ModDns *mod_dns);
     ~ModFlow();
-    void set_eid(swarm::ev_id ev_ipv4, swarm::ev_id ev_ipv6,
-                 swarm::ev_id ev_dns);
     void recv (swarm::ev_id eid, const  swarm::Property &p);
     void exec (const struct timespec &ts);
     const std::vector<std::string>& recv_event() const;
-    int task_interval() const;    
+    int task_interval() const;
+    void bind_event_id(const std::string &ev_name, swarm::ev_id eid);
+
   };
 
 }

@@ -40,6 +40,7 @@ namespace devourer {
                        const struct timeval &ts) throw(Exception) = 0;
   };
 
+  // -----------------------------------
   class FileStream : public Stream {
   private:
     std::string fpath_;
@@ -53,6 +54,7 @@ namespace devourer {
                const struct timeval &ts) throw(Exception);
   };
 
+  // -----------------------------------
   class FluentdStream : public Stream {
   private:
     std::string host_;

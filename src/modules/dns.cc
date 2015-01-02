@@ -146,7 +146,7 @@ namespace devourer {
                                    const std::string &cname, time_t init_ts) :
     qname_(qname), cname_(cname), last_ts_(init_ts)
   {
-    debug(true, "reg: %s -> %s", qname.c_str(), cname.c_str());
+    debug(false, "reg: %s -> %s", qname.c_str(), cname.c_str());
   }
   ModDns::CNameRecord::~CNameRecord() {
   }
@@ -227,8 +227,7 @@ namespace devourer {
 
     debug(DBG, "flag:%d, query %p", qflag, q);
     if (qflag == 0) {
-      // Handling DNS query.
-      // debug(true, "%s -> %s", p.src_addr().c_str(), p.dst_addr().c_str());
+      // DNS query.
       if (!q) {
         // Query is not found.
         q = new Query(hv, tx_id);
@@ -245,10 +244,11 @@ namespace devourer {
       }
 
     } else {
-      // Handling DNS response.
+      // DNS response.
       struct timeval tv = {0, 0};
 
       if (q) {
+        // Found matched query with the response.
         tv.tv_sec = q->last_ts();
         double ts = p.ts() - q->last_ts();
         object::Map *map = new object::Map();
@@ -286,6 +286,7 @@ namespace devourer {
               rec->update(ts);
             } else {
               rec = new ARecord(qname, key, keylen, ts);
+              // debug(false, "A Record: %s -> %s", qname.c_str(), p.value("dns.an_data", i).ip4().c_str());
               this->addr_table_.put(cache_ttl, rec);
             }
           } else if (rec_type == 5) {
@@ -308,6 +309,7 @@ namespace devourer {
         }
 
       } else {
+        // Matched query is not found.
         object::Map *map = new object::Map();
         tv.tv_sec = p.ts();
         map->put("ts", p.ts());

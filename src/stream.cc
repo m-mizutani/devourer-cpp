@@ -43,17 +43,29 @@ namespace devourer {
   FileStream::~FileStream() {
   }
   void FileStream::setup() {
-    this->fd_ = ::open(this->fpath_.c_str(), O_WRONLY|O_CREAT, 0644);
-    if (this->fd_ < 0) {
-      std::string err(strerror(errno));
-      throw Exception("FileStream Error: " + err);
+    if (this->fpath_ == "-") {
+      // Output to stdout
+      this->fd_ = 1;
+    } else {
+      // Output to a file
+      this->fd_ = ::open(this->fpath_.c_str(), O_WRONLY|O_CREAT, 0644);
+      if (this->fd_ < 0) {
+        std::string err(strerror(errno));
+        throw Exception("FileStream Error: " + err);
+      }
     }
   }
   void FileStream::emit(const std::string &tag, object::Object *obj, 
                         const struct timeval &ts) throw(Exception) {
     msgpack::sbuffer buf;
     msgpack::packer <msgpack::sbuffer> pk (&buf);
-    obj->to_msgpack(&pk);
+    
+    object::Array arr;
+    arr.push(tag);
+    arr.push(static_cast<int64_t>(ts.tv_sec));
+    arr.push(obj);
+    arr.to_msgpack(&pk);
+    
     ::write(this->fd_, buf.data(), buf.size());
   }
 

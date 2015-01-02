@@ -34,8 +34,11 @@
 #include "./dns.h"
 
 namespace devourer {
-  const std::vector<std::string> ModFlow::recv_events_{"ipv4.packet",
-      "ipv6.packet", "dns.packet"};
+  
+  const std::vector<std::string> ModFlow::recv_events_{
+    "ipv4.packet",
+    "ipv6.packet",
+  };
   const bool ModFlow::DBG = true;
   
   // ------------------------------------------------------------
@@ -53,21 +56,27 @@ namespace devourer {
         delete flow;
     }
   }
-      
-  void ModFlow::set_eid(swarm::ev_id ev_ipv4, swarm::ev_id ev_ipv6,
-                        swarm::ev_id ev_dns) {
-    this->ev_ipv4_ = ev_ipv4;
-    this->ev_ipv6_ = ev_ipv6;
-    this->ev_dns_  = ev_dns;    
+  void ModFlow::bind_event_id(const std::string &ev_name, swarm::ev_id eid) {
+    if (ev_name == "ipv4.packet") {
+      this->ev_ipv4_ = eid;
+    } else if (ev_name == "ipv6.packet") {
+      this->ev_ipv6_ = eid;
+    }
   }
+  
   void ModFlow::recv (swarm::ev_id eid, const swarm::Property &p) {
     static const bool FLOW_DBG = false;
+
+    // Get packet time.
+    struct timeval tv;
+    p.tv(&tv);
+
     // Eliminate timeout flow, and re-put flow if it updated.
     if (this->last_ts_ == 0) {
       this->last_ts_ = p.tv_sec();
     } else if (this->last_ts_ < p.tv_sec()) {
       time_t diff = p.tv_sec() - this->last_ts_;
-      debug(FLOW_DBG, "tick: %ld (%ld)", p.tv_sec(), diff);
+      // debug(FLOW_DBG, "tick: %ld (%ld)", p.tv_sec(), diff);
       this->last_ts_ = p.tv_sec();
       this->flow_table_.prog(diff);
 
@@ -75,8 +84,9 @@ namespace devourer {
       while(NULL != (node = this->flow_table_.pop())) {
         Flow *flow = dynamic_cast<Flow*>(node);
         if (flow->remain() > 0) {
-          debug(FLOW_DBG, "updating [%016llX]", flow->hash());
+          // debug(FLOW_DBG, "updating [%016llX]", flow->hash());
           this->flow_table_.put(flow->remain(), flow);
+          flow->refresh(p.tv_sec());
         } else {
           debug(FLOW_DBG, "deleting [%016llX]", flow->hash());          
           delete flow;
@@ -84,7 +94,8 @@ namespace devourer {
       }
     }
 
-    // 
+    
+    // IPv4/IPv6 packets
     if (eid == this->ev_ipv4_ || eid == this->ev_ipv6_) {
       size_t keylen;
       const void *key = p.ssn_label(&keylen); 
@@ -101,18 +112,31 @@ namespace devourer {
         const std::string &dst =
           this->mod_dns_->resolv_addr(dst_addr, dst_len);
 
-        debug(true, "new flow %s(%s)->%s(%s)",
+        object::Map *msg = new object::Map();
+        msg->put("src_addr", p.src_addr());
+        msg->put("dst_addr", p.dst_addr());
+        if (!src.empty()) {
+          msg->put("src_name", src);
+        }
+        if (!dst.empty()) {
+          msg->put("dst_name", dst);
+        }
+        msg->put("proto", p.proto());
+        if (p.has_port()) {
+          msg->put("src_port", p.src_port());
+          msg->put("dst_port", p.dst_port());
+        }
+        debug(FLOW_DBG, "new flow %s(%s)->%s(%s)",
               // p.hash_value(),
               p.src_addr().c_str(), src.c_str(), 
               p.dst_addr().c_str(), dst.c_str());
+        this->emit("flow.new", msg, &tv);
         this->flow_table_.put(this->flow_timeout_, flow);
       }
-      flow->update(p.tv_sec()); 
 
-    } else if (eid == this->ev_dns_) {
+      flow->update(p);
 
-      // debug(true, "eid=%lld, dns", eid);
-    } 
+    }
   }
   void ModFlow::exec (const struct timespec &ts) {
     
@@ -126,16 +150,44 @@ namespace devourer {
 
   // ------------------------------------------------------------
   // class ModFlow::Flow
-  ModFlow::Flow::Flow(const swarm::Property &p) {
+  ModFlow::Flow::Flow(const swarm::Property &p) :
+    l_port_(0), r_port_(0),
+    l_pkt_(0),  r_pkt_(0),
+    l_size_(0), r_size_(0)
+  {
     this->hv_ = p.hash_value();
     const void *key = p.ssn_label(&this->keylen_);
     this->key_ = malloc(this->keylen_);
     memcpy(this->key_, key, this->keylen_);
+
     this->created_at_ = p.tv_sec();
     this->updated_at_ = p.tv_sec();
+    this->refreshed_at_ = p.tv_sec();
+    
+    this->init_dir_ = p.dir();
+    if (this->init_dir_ == swarm::FlowDir::DIR_L2R) {
+      // Left to Right
+      this->l_addr_ = p.src_addr(); this->r_addr_ = p.dst_addr();
+      this->l_port_ = p.src_port(); this->r_port_ = p.dst_port();
+    } else if (this->init_dir_ == swarm::FlowDir::DIR_R2L) {
+      // Right to Left
+      this->r_addr_ = p.src_addr(); this->l_addr_ = p.dst_addr();
+      this->r_port_ = p.src_port(); this->l_port_ = p.dst_port();
+    }
   }
+
   ModFlow::Flow::~Flow() {
     free(this->key_);
   }
   
+  void ModFlow::Flow::update(const swarm::Property &p) {
+    this->updated_at_ = p.tv_sec();
+    if (p.dir() == swarm::FlowDir::DIR_L2R) {
+      this->l_pkt_  += 1;
+      this->l_size_ += p.len();
+    } else if (p.dir() == swarm::FlowDir::DIR_R2L) {
+      this->r_pkt_  += 1;
+      this->r_size_ += p.len();
+    }
+  }
 }
