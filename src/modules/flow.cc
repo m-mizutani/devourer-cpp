@@ -88,7 +88,13 @@ namespace devourer {
           this->flow_table_.put(flow->remain(), flow);
           flow->refresh(p.tv_sec());
         } else {
-          debug(FLOW_DBG, "deleting [%016llX]", flow->hash());          
+          debug(FLOW_DBG, "deleting [%016llX]", flow->hash());
+
+          object::Map *msg = new object::Map();
+          flow->build_message(msg);
+          struct timeval tv;
+          flow->created_at(&tv);
+          this->emit("flow.end", msg, &tv);
           delete flow;
         }
       }
@@ -103,7 +109,6 @@ namespace devourer {
         (this->flow_table_.get(p.hash_value(), key, keylen));
       if (flow == NULL) {
         // TODO: catch bad_alloc
-        flow = new Flow(p);
         size_t src_len, dst_len;
         const void *src_addr = p.src_addr(&src_len);
         const void *dst_addr = p.dst_addr(&dst_len);
@@ -111,6 +116,8 @@ namespace devourer {
           this->mod_dns_->resolv_addr(src_addr, src_len);
         const std::string &dst =
           this->mod_dns_->resolv_addr(dst_addr, dst_len);
+
+        flow = new Flow(p, src, dst);
 
         object::Map *msg = new object::Map();
         msg->put("src_addr", p.src_addr());
@@ -150,7 +157,8 @@ namespace devourer {
 
   // ------------------------------------------------------------
   // class ModFlow::Flow
-  ModFlow::Flow::Flow(const swarm::Property &p) :
+  ModFlow::Flow::Flow(const swarm::Property &p, const std::string& src,
+                      const std::string& dst) :
     l_port_(0), r_port_(0),
     l_pkt_(0),  r_pkt_(0),
     l_size_(0), r_size_(0)
@@ -169,11 +177,14 @@ namespace devourer {
       // Left to Right
       this->l_addr_ = p.src_addr(); this->r_addr_ = p.dst_addr();
       this->l_port_ = p.src_port(); this->r_port_ = p.dst_port();
+      this->l_name_ = src;          this->r_name_ = dst;
     } else if (this->init_dir_ == swarm::FlowDir::DIR_R2L) {
       // Right to Left
       this->r_addr_ = p.src_addr(); this->l_addr_ = p.dst_addr();
       this->r_port_ = p.src_port(); this->l_port_ = p.dst_port();
+      this->r_name_ = src;          this->l_name_ = dst;
     }
+    this->proto_ = p.proto();
   }
 
   ModFlow::Flow::~Flow() {
@@ -190,4 +201,29 @@ namespace devourer {
       this->r_size_ += p.len();
     }
   }
+
+  void ModFlow::Flow::build_message(object::Map *msg) {
+    msg->put("l_addr", this->l_addr_);
+    msg->put("r_addr", this->r_addr_);
+    msg->put("l_port", this->l_port_);
+    msg->put("r_port", this->r_port_);
+    msg->put("proto",  this->proto_);
+    msg->put("l_size", this->l_size_);
+    msg->put("r_size", this->r_size_);
+    msg->put("l_pkt",  this->l_pkt_);
+    msg->put("r_pkt",  this->r_pkt_);
+    if (!this->l_name_.empty()) {
+      msg->put("l_name", this->l_name_);
+    }
+    if (!this->r_name_.empty()) {
+      msg->put("r_name", this->r_name_);
+    }
+    switch (this->init_dir_) {
+      case swarm::FlowDir::DIR_L2R: msg->put("init", "l"); break;
+      case swarm::FlowDir::DIR_R2L: msg->put("init", "r"); break;
+      case swarm::FlowDir::DIR_NIL: break; // nothing to do
+    }
+  }
+
+  
 }

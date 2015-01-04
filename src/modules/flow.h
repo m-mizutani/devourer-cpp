@@ -49,14 +49,17 @@ namespace devourer {
       time_t refreshed_at_;
       time_t updated_at_;
       swarm::FlowDir init_dir_;
+
       std::string l_addr_, r_addr_;
       std::string l_name_, r_name_;
       int l_port_, r_port_;
       int l_pkt_, r_pkt_;
       int l_size_, r_size_;
+      std::string proto_;
       
     public:
-      Flow(const swarm::Property &p);
+      Flow(const swarm::Property &p, const std::string& src_name = "",
+           const std::string& dst = "");
       ~Flow();
       uint64_t hash() { return this->hv_; }
       bool match(const void *key, size_t len) {
@@ -72,6 +75,14 @@ namespace devourer {
         } else {
           return 0;
         }
+      }
+      void set_l_name(const std::string& name) { this->l_name_ = name; }
+      void set_r_name(const std::string& name) { this->r_name_ = name; }
+
+      void build_message(object::Map *msg);
+      void created_at(struct timeval *tv) const {
+        tv->tv_sec = this->created_at_;
+        tv->tv_usec = 0;
       }
     };
 
