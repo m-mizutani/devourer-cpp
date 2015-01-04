@@ -94,7 +94,7 @@ namespace devourer {
           flow->build_message(msg);
           struct timeval tv;
           flow->created_at(&tv);
-          this->emit("flow.end", msg, &tv);
+          this->emit("flow.log", msg, &tv);
           delete flow;
         }
       }
