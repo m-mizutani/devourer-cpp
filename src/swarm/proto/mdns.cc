@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2014 Masayoshi Mizutani <muret@haeena.net>
+/*-
+ * Copyright (c) 2013 Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -16,40 +16,32 @@
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
  * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
 
-#ifndef SRC_MODULE_H__
-#define SRC_MODULE_H__
+#include "./decode_name_service.h"
 
-#include "./swarm/swarm.h"
-#include "./stream.h"
-
-namespace devourer {
-  class Module : public swarm::Handler, public swarm::Task {
-  private:
-    Stream *stream_;
-    
-  protected:
-    void emit(const std::string &tag, object::Object *obj,
-              struct timeval *ts = NULL);
+namespace swarm {
+  // Link-local Multicast Name Resolution Protocol
+  class MdnsDecoder : public NameServiceDecoder {
   public:
-    Module() : stream_(NULL) {}
-    virtual ~Module() = default;
-    virtual const std::vector<std::string>& recv_event() const = 0;
-    virtual int task_interval() const = 0;
-    virtual void bind_event_id(const std::string &ev_name, swarm::ev_id eid) {
+    explicit MdnsDecoder (NetDec * nd) : NameServiceDecoder (nd, "mdns") {
     }
-    void set_stream(Stream *stream) { this->stream_ = stream; }
+
+    // Factory function for MdnsDecoder
+    static Decoder * New (NetDec * nd) { return new MdnsDecoder (nd); }
+
+    // Main decoding function.
+    bool decode (Property *p) {
+      return this->ns_decode (p);
+    }
   };
 
-}
-
-
-#endif  // SRC_MODULE_H__
+  INIT_DECODER (mdns, MdnsDecoder::New);
+}  // namespace swarm

@@ -26,7 +26,7 @@
 
 #include "./flow.h"
 #include <iostream>
-#include <swarm.h>
+#include "../swarm/swarm.h"
 #include "../devourer.h"
 #include "../object.h"
 #include "../stream.h"

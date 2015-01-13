@@ -30,7 +30,6 @@
 #include <exception>
 #include <vector>
 #include <msgpack.hpp>
-#include <swarm.h>
 
 #include "../module.h"
 #include "../devourer.h"

@@ -27,7 +27,7 @@
 #include "./dns.h"
 #include <iostream>
 #include <string.h>
-#include <swarm.h>
+
 #include "../devourer.h"
 #include "../object.h"
 #include "../stream.h"
