@@ -212,6 +212,10 @@ namespace devourer {
     msg->put("r_size", this->r_size_);
     msg->put("l_pkt",  this->l_pkt_);
     msg->put("r_pkt",  this->r_pkt_);
+    msg->put("init_ts", static_cast<int64_t>(this->created_at_));
+    msg->put("last_ts", static_cast<int64_t>(this->updated_at_));
+      
+      
     if (!this->l_name_.empty()) {
       msg->put("l_name", this->l_name_);
     }
