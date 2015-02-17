@@ -21,19 +21,16 @@ FILE(GLOB BASESRCS
 FILE(GLOB TESTSRCS "test/*.cc")
 
 # Module code
-ADD_LIBRARY(mod_devourer SHARED ${BASESRCS})
-TARGET_LINK_LIBRARIES(mod_devourer msgpack pcap ev)
+ADD_LIBRARY(devourer SHARED ${BASESRCS})
+TARGET_LINK_LIBRARIES(devourer msgpack pcap ev)
 
 # Test code
 ADD_EXECUTABLE(devourer_test ${TESTSRCS})
-TARGET_LINK_LIBRARIES(devourer_test mod_devourer)
+TARGET_LINK_LIBRARIES(devourer_test devourer)
 
 # Application (CLI) code
-ADD_EXECUTABLE(devourer apps/cli.cc apps/optparse.cc)
-TARGET_LINK_LIBRARIES(devourer mod_devourer)
+ADD_EXECUTABLE(overseer apps/cli.cc apps/optparse.cc)
+TARGET_LINK_LIBRARIES(overseer devourer)
 
-INSTALL(TARGETS devourer RUNTIME DESTINATION bin)
-INSTALL(TARGETS mod_devourer LIBRARY DESTINATION lib)
-
-
-
+INSTALL(TARGETS overseer RUNTIME DESTINATION bin)
+INSTALL(TARGETS devourer LIBRARY DESTINATION lib)
