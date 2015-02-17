@@ -55,10 +55,18 @@ Devourer::Devourer(const std::string &target, devourer::Source src) :
   target_(target), src_(src), netcap_(NULL), stream_(NULL)
 {
   this->netdec_ = new swarm::NetDec();
+  
+  devourer::ModDns *mod_dns = new devourer::ModDns();
+  devourer::ModFlow *mod_flow = new devourer::ModFlow(mod_dns);
+  this->install_module(mod_dns);
+  this->install_module(mod_flow);
 }
 
 Devourer::~Devourer(){
   delete this->netcap_;
+  for(size_t i = 0; i < this->modules_.size(); i++) {
+    delete this->modules_[i];
+  }
 }
 
 void Devourer::set_fluentd(const std::string &dst, const std::string &filter)
@@ -83,7 +91,6 @@ throw(devourer::Exception) {
 
 void Devourer::install_module(devourer::Module *module)
   throw(devourer::Exception) {
-  assert(this->netcap_);
   assert(this->netdec_);
   
   const std::vector<std::string> &ev_set = module->recv_event();
@@ -96,16 +103,7 @@ void Devourer::install_module(devourer::Module *module)
     module->bind_event_id(ev_set[i], eid);
   }
 
-  int interval = module->task_interval();
-  if (interval > 0) {
-    swarm::task_id tid =
-      this->netcap_->set_periodic_task(module, static_cast<float>(interval));
-    if (tid == swarm::TASK_NULL) {
-      throw devourer::Exception(this->netcap_->errmsg());
-    }
-  }
-
-  module->set_stream(this->stream_);
+  this->modules_.push_back(module);
 }
 
 void Devourer::start() throw(devourer::Exception) {
@@ -133,15 +131,23 @@ void Devourer::start() throw(devourer::Exception) {
     this->stream_->setup();
   }
 
+  // Setup modules
+  for(size_t i = 0; i < this->modules_.size(); i++) {
+    devourer::Module *module = this->modules_[i];
+    int interval = module->task_interval();
+    if (interval > 0) {
+      swarm::task_id tid =
+        this->netcap_->set_periodic_task(module,
+                                         static_cast<float>(interval));
+      if (tid == swarm::TASK_NULL) {
+        throw devourer::Exception(this->netcap_->errmsg());
+      }
+    }
+    module->set_stream(this->stream_);
+  }    
+
+
   
-  devourer::ModDns *mod_dns = new devourer::ModDns();
-  devourer::ModFlow *mod_flow = new devourer::ModFlow(mod_dns);
-  this->install_module(mod_dns);
-  this->install_module(mod_flow);
-
   this->netcap_->start();
-
-  delete mod_dns;
-  delete mod_flow;
   return;
 }
