@@ -47,20 +47,22 @@ namespace devourer {
   };
 
   class Stream;
-
   class Module;
 
 }
 
 namespace swarm {
-  class Swarm;
+  class NetCap;
+  class NetDec;
 }
 
 class Devourer {
 private:
   std::string target_;
   devourer::Source src_;
-  swarm::Swarm *sw_;
+  swarm::NetDec *netdec_;
+  swarm::NetCap *netcap_;
+  
   std::vector<devourer::Module*> modules_;
   devourer::Stream *stream_;
 

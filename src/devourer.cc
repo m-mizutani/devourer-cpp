@@ -37,7 +37,7 @@
 
 namespace devourer {
   void Module::emit(const std::string &tag, object::Object *obj,
-                            struct timeval *ts) {
+                    struct timeval *ts) {
     if (this->stream_) {
         
       if (ts) {
@@ -52,12 +52,13 @@ namespace devourer {
 }
 
 Devourer::Devourer(const std::string &target, devourer::Source src) :
-  target_(target), src_(src), sw_(NULL), stream_(NULL)
+  target_(target), src_(src), netcap_(NULL), stream_(NULL)
 {
+  this->netdec_ = new swarm::NetDec();
 }
 
 Devourer::~Devourer(){
-  delete this->sw_;
+  delete this->netcap_;
 }
 
 void Devourer::set_fluentd(const std::string &dst, const std::string &filter)
@@ -82,12 +83,15 @@ throw(devourer::Exception) {
 
 void Devourer::install_module(devourer::Module *module)
   throw(devourer::Exception) {
+  assert(this->netcap_);
+  assert(this->netdec_);
+  
   const std::vector<std::string> &ev_set = module->recv_event();
   for(size_t i = 0; i < ev_set.size(); i++) {
-    swarm::ev_id eid = this->sw_->lookup_event_id(ev_set[i]);
-    swarm::hdlr_id hid = this->sw_->set_handler(eid, module);
+    swarm::ev_id eid = this->netdec_->lookup_event_id(ev_set[i]);
+    swarm::hdlr_id hid = this->netdec_->set_handler(eid, module);
     if (hid == swarm::HDLR_NULL) {
-      throw devourer::Exception(this->sw_->errmsg());
+      throw devourer::Exception(this->netdec_->errmsg());
     }
     module->bind_event_id(ev_set[i], eid);
   }
@@ -95,9 +99,9 @@ void Devourer::install_module(devourer::Module *module)
   int interval = module->task_interval();
   if (interval > 0) {
     swarm::task_id tid =
-      this->sw_->set_periodic_task(module, static_cast<float>(interval));
+      this->netcap_->set_periodic_task(module, static_cast<float>(interval));
     if (tid == swarm::TASK_NULL) {
-      throw devourer::Exception(this->sw_->errmsg());
+      throw devourer::Exception(this->netcap_->errmsg());
     }
   }
 
@@ -108,19 +112,21 @@ void Devourer::start() throw(devourer::Exception) {
   // Create a new Swarm instance.
   switch(this->src_) {
   case devourer::PCAP_FILE:
-    this->sw_ = new swarm::SwarmFile(this->target_);
+    this->netcap_ = new swarm::CapPcapFile(this->target_);
     break;
   case devourer::INTERFACE:
-    this->sw_ = new swarm::SwarmDev(this->target_);
+    this->netcap_ = new swarm::CapPcapDev(this->target_);
     break;
   }
 
-  if (!this->sw_) {
+  if (!this->netcap_) {
     throw devourer::Exception("Fatal error");
   }
-  if (!this->sw_->ready()) {
-    throw devourer::Exception(this->sw_->errmsg());
+  if (!this->netcap_->ready()) {
+    throw devourer::Exception(this->netcap_->errmsg());
   }
+
+  this->netcap_->bind_netdec(this->netdec_);
 
   // Setup output stream.
   if (this->stream_) {
@@ -133,7 +139,7 @@ void Devourer::start() throw(devourer::Exception) {
   this->install_module(mod_dns);
   this->install_module(mod_flow);
 
-  this->sw_->start();
+  this->netcap_->start();
 
   delete mod_dns;
   delete mod_flow;
