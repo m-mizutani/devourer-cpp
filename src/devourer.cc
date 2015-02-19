@@ -151,3 +151,9 @@ void Devourer::start() throw(devourer::Exception) {
   this->netcap_->start();
   return;
 }
+
+
+bool Devourer::input (const uint8_t *data, const size_t len,
+                      const struct timeval &tv, const size_t cap_len) {
+  return this->netdec_->input(data, len, tv, cap_len);
+}

@@ -77,7 +77,13 @@ public:
   throw(devourer::Exception);
   void set_filter(const std::string &filter) throw(devourer::Exception);
   void enable_verbose();
+
+  // to capture
   void start() throw(devourer::Exception);
+
+  // only decoding
+  bool input (const uint8_t *data, const size_t len,
+              const struct timeval &tv, const size_t cap_len = 0);
 };
 
 
