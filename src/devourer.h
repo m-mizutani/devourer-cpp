@@ -48,7 +48,6 @@ namespace devourer {
 
   class Stream;
   class Module;
-
 }
 
 namespace swarm {

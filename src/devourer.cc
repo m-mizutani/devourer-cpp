@@ -39,7 +39,6 @@ namespace devourer {
   void Module::emit(const std::string &tag, object::Object *obj,
                     struct timeval *ts) {
     if (this->stream_) {
-        
       if (ts) {
         this->stream_->emit(tag, obj, *ts);
       } else {
@@ -145,8 +144,6 @@ void Devourer::start() throw(devourer::Exception) {
     }
     module->set_stream(this->stream_);
   }    
-
-
   
   this->netcap_->start();
   return;
