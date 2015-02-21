@@ -25,8 +25,8 @@ ADD_LIBRARY(devourer SHARED ${BASESRCS})
 TARGET_LINK_LIBRARIES(devourer msgpack pcap ev)
 
 # Test code
-ADD_EXECUTABLE(devourer_test ${TESTSRCS})
-TARGET_LINK_LIBRARIES(devourer_test devourer)
+ADD_EXECUTABLE(devourer-test ${TESTSRCS})
+TARGET_LINK_LIBRARIES(devourer-test devourer)
 
 # Application (CLI) code
 ADD_EXECUTABLE(devourer-bin apps/cli.cc apps/optparse.cc)
