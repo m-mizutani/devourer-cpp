@@ -77,6 +77,21 @@ namespace devourer {
     
   };
 
+  // -----------------------------------
+  class BufferStream : public Stream {
+  private:
+    Buffer *buf_;
+    const static bool DBG;
+
+  public:
+    BufferStream(Buffer *buf);
+    virtual ~BufferStream();
+    void setup();
+    void output(const std::string &tag, object::Object *obj,
+                const struct timeval &ts) throw(Exception);
+    
+  };
+
 }
 
 #endif   // SRC_STREAM_H__

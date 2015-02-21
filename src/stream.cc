@@ -166,4 +166,16 @@ namespace devourer {
     arr.to_msgpack(&pk);
     ::write(this->sock_, buf.data(), buf.size());
   }
+
+  BufferStream::BufferStream(Buffer *buf) : buf_(buf) {
+  }
+  BufferStream::~BufferStream() {
+  }
+  void BufferStream::setup() {
+  }
+  void BufferStream::output(const std::string &tag, object::Object *obj,
+                            const struct timeval &ts) throw(Exception) {
+    this->buf_->push(obj);
+  }
+  
 }

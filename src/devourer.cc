@@ -48,6 +48,30 @@ namespace devourer {
       }
     }
   }
+
+  
+  Buffer::Buffer() {
+  }
+  Buffer::~Buffer() {
+    while(this->buf_.size() > 0) {
+      object::Object *obj = this->buf_.front();
+      this->buf_.pop_front();
+      delete obj;
+    }      
+  }
+  void Buffer::push(object::Object *obj) {
+    this->buf_.push_back(obj);
+  }
+  object::Object* Buffer::pop() {
+    if (this->buf_.size() == 0) {
+      return nullptr;
+    } else {
+      object::Object *obj = this->buf_.front();
+      this->buf_.pop_front();
+      return obj;
+    }
+  }
+  
 }
 
 Devourer::Devourer(const std::string &target, devourer::Source src) :
@@ -91,7 +115,8 @@ void Devourer::setdst_filestream(const std::string &fpath,
 }
 
 
-void Devourer::setdst_buffer(const std::string &filter) {
+void Devourer::setdst_buffer(devourer::Buffer *buf, const std::string &filter)
+  throw(devourer::Exception) {
   this->stream_ = nullptr;  
 }
 

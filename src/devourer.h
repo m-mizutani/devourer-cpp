@@ -29,6 +29,7 @@
 
 #include <exception>
 #include <vector>
+#include <deque>
 #include <string>
 
 namespace devourer {
@@ -41,13 +42,27 @@ namespace devourer {
     virtual const char* what() const throw() { return this->errmsg_.c_str(); }
   };
 
+  namespace object {
+    class Object;
+  }
+
+  class Stream;
+  class Module;
+  
+  class Buffer {
+  private:
+    std::deque<object::Object*> buf_;
+  public:
+    Buffer();
+    ~Buffer();
+    void push(object::Object *obj);
+    object::Object *pop();
+  };
+  
   enum Source {
     PCAP_FILE = 1,
     INTERFACE = 2,
   };
-
-  class Stream;
-  class Module;
 }
 
 namespace swarm {
@@ -75,8 +90,9 @@ public:
   void setdst_filestream(const std::string &fpath,
                          const std::string& filter="")
     throw(devourer::Exception);
-  void setdst_buffer(const std::string &filter="") throw(devourer::Exception);
-  
+  void setdst_buffer(devourer::Buffer *buf,
+                     const std::string &filter="") throw(devourer::Exception);
+
   void set_filter(const std::string &filter) throw(devourer::Exception);
   void enable_verbose();
 
