@@ -29,8 +29,10 @@ ADD_EXECUTABLE(devourer_test ${TESTSRCS})
 TARGET_LINK_LIBRARIES(devourer_test devourer)
 
 # Application (CLI) code
-ADD_EXECUTABLE(overseer apps/cli.cc apps/optparse.cc)
-TARGET_LINK_LIBRARIES(overseer devourer)
+ADD_EXECUTABLE(devourer-bin apps/cli.cc apps/optparse.cc)
+SET_TARGET_PROPERTIES(devourer-bin
+  PROPERTIES OUTPUT_NAME devourer)
+TARGET_LINK_LIBRARIES(devourer-bin devourer)
 
-INSTALL(TARGETS overseer RUNTIME DESTINATION bin)
+INSTALL(TARGETS devourer-bin RUNTIME DESTINATION bin)
 INSTALL(TARGETS devourer LIBRARY DESTINATION lib)
