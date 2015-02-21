@@ -68,7 +68,8 @@ Devourer::~Devourer(){
   }
 }
 
-void Devourer::set_fluentd(const std::string &dst, const std::string &filter)
+void Devourer::setdst_fluentd(const std::string &dst,
+                              const std::string &filter)
 throw(devourer::Exception) {
   size_t pos;
   if(std::string::npos != (pos = dst.find(":", 0))) {
@@ -82,10 +83,16 @@ throw(devourer::Exception) {
   }
 }
 
-void Devourer::set_output(const std::string &fpath, const std::string &filter)
-throw(devourer::Exception) {
+void Devourer::setdst_filestream(const std::string &fpath,
+                                 const std::string &filter)
+  throw(devourer::Exception) {
   this->stream_ = new devourer::FileStream(fpath);
   this->stream_->set_filter(filter);
+}
+
+
+void Devourer::setdst_buffer(const std::string &filter) {
+  this->stream_ = nullptr;  
 }
 
 void Devourer::install_module(devourer::Module *module)
