@@ -24,12 +24,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <fluent.hpp>
 #include "./flow.h"
 #include <iostream>
 #include "../swarm/swarm.h"
 #include "../devourer.h"
-#include "../object.h"
-#include "../stream.h"
 #include "../debug.h"
 #include "./dns.h"
 
@@ -90,11 +89,10 @@ namespace devourer {
         } else {
           debug(FLOW_DBG, "deleting [%016llX]", flow->hash());
 
-          object::Map *msg = new object::Map();
+          fluent::Message *msg = this->logger_->retain_message("flow.log");
           flow->build_message(msg);
-          struct timeval tv;
-          flow->created_at(&tv);
-          this->emit("flow.log", msg, &tv);
+          msg->set_ts(tv.tv_sec);
+          this->logger_->emit(msg);
           delete flow;
         }
       }
@@ -119,25 +117,25 @@ namespace devourer {
 
         flow = new Flow(p, src, dst);
 
-        object::Map *msg = new object::Map();
-        msg->put("src_addr", p.src_addr());
-        msg->put("dst_addr", p.dst_addr());
+        fluent::Message *msg = this->logger_->retain_message("flow.new");
+        msg->set_ts(tv.tv_sec);
+        msg->set("src_addr", p.src_addr());
+        msg->set("dst_addr", p.dst_addr());
         if (!src.empty()) {
-          msg->put("src_name", src);
+          msg->set("src_name", src);
         }
         if (!dst.empty()) {
-          msg->put("dst_name", dst);
+          msg->set("dst_name", dst);
         }
-        msg->put("proto", p.proto());
+        msg->set("proto", p.proto());
         if (p.has_port()) {
-          msg->put("src_port", p.src_port());
-          msg->put("dst_port", p.dst_port());
+          msg->set("src_port", p.src_port());
+          msg->set("dst_port", p.dst_port());
         }
         debug(FLOW_DBG, "new flow %s(%s)->%s(%s)",
-              // p.hash_value(),
               p.src_addr().c_str(), src.c_str(), 
               p.dst_addr().c_str(), dst.c_str());
-        this->emit("flow.new", msg, &tv);
+        this->logger_->emit(msg);
         this->flow_table_.put(this->flow_timeout_, flow);
       }
 
@@ -202,29 +200,29 @@ namespace devourer {
     }
   }
 
-  void ModFlow::Flow::build_message(object::Map *msg) {
-    msg->put("l_addr", this->l_addr_);
-    msg->put("r_addr", this->r_addr_);
-    msg->put("l_port", this->l_port_);
-    msg->put("r_port", this->r_port_);
-    msg->put("proto",  this->proto_);
-    msg->put("l_size", this->l_size_);
-    msg->put("r_size", this->r_size_);
-    msg->put("l_pkt",  this->l_pkt_);
-    msg->put("r_pkt",  this->r_pkt_);
-    msg->put("init_ts", static_cast<int64_t>(this->created_at_));
-    msg->put("last_ts", static_cast<int64_t>(this->updated_at_));
+  void ModFlow::Flow::build_message(fluent::Message *msg) {
+    msg->set("l_addr", this->l_addr_);
+    msg->set("r_addr", this->r_addr_);
+    msg->set("l_port", this->l_port_);
+    msg->set("r_port", this->r_port_);
+    msg->set("proto",  this->proto_);
+    msg->set("l_size", this->l_size_);
+    msg->set("r_size", this->r_size_);
+    msg->set("l_pkt",  this->l_pkt_);
+    msg->set("r_pkt",  this->r_pkt_);
+    msg->set("init_ts", static_cast<unsigned int>(this->created_at_));
+    msg->set("last_ts", static_cast<unsigned int>(this->updated_at_));
       
       
     if (!this->l_name_.empty()) {
-      msg->put("l_name", this->l_name_);
+      msg->set("l_name", this->l_name_);
     }
     if (!this->r_name_.empty()) {
-      msg->put("r_name", this->r_name_);
+      msg->set("r_name", this->r_name_);
     }
     switch (this->init_dir_) {
-      case swarm::FlowDir::DIR_L2R: msg->put("init", "l"); break;
-      case swarm::FlowDir::DIR_R2L: msg->put("init", "r"); break;
+      case swarm::FlowDir::DIR_L2R: msg->set("init", "l"); break;
+      case swarm::FlowDir::DIR_R2L: msg->set("init", "r"); break;
       case swarm::FlowDir::DIR_NIL: break; // nothing to do
     }
   }

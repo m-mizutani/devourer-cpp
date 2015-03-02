@@ -25,57 +25,17 @@
  */
 
 #include <iostream>
+#include <fluent.hpp>
 #include "./swarm/swarm.h"
 #include "./devourer.h"
-#include "./object.h"
-#include "./stream.h"
 #include "./debug.h"
 
 #include "./module.h"
 #include "./modules/dns.h"
 #include "./modules/flow.h"
 
-namespace devourer {
-  void Module::emit(const std::string &tag, object::Object *obj,
-                    struct timeval *ts) {
-    if (this->stream_) {
-      if (ts) {
-        this->stream_->emit(tag, obj, *ts);
-      } else {
-        struct timeval now_ts;
-        gettimeofday(&now_ts, NULL);
-        this->stream_->emit(tag, obj, now_ts);
-      }
-    }
-  }
-
-  
-  Buffer::Buffer() {
-  }
-  Buffer::~Buffer() {
-    while(this->buf_.size() > 0) {
-      object::Object *obj = this->buf_.front();
-      this->buf_.pop_front();
-      delete obj;
-    }      
-  }
-  void Buffer::push(object::Object *obj) {
-    this->buf_.push_back(obj);
-  }
-  object::Object* Buffer::pop() {
-    if (this->buf_.size() == 0) {
-      return nullptr;
-    } else {
-      object::Object *obj = this->buf_.front();
-      this->buf_.pop_front();
-      return obj;
-    }
-  }
-  
-}
-
 Devourer::Devourer(const std::string &target, devourer::Source src) :
-  target_(target), src_(src), netcap_(NULL), stream_(NULL)
+  target_(target), src_(src), netcap_(NULL), logger_(new fluent::Logger())
 {
   this->netdec_ = new swarm::NetDec();
   
@@ -92,33 +52,33 @@ Devourer::~Devourer(){
   }
 }
 
-void Devourer::setdst_fluentd(const std::string &dst,
-                              const std::string &filter)
-throw(devourer::Exception) {
+void Devourer::setdst_fluentd(const std::string &dst) {
   size_t pos;
-  if(std::string::npos != (pos = dst.find(":", 0))) {
-    std::string host = dst.substr(0, pos);
-    std::string port = dst.substr(pos + 1);
-    this->stream_ = new devourer::FluentdStream(host, port);
-    this->stream_->set_filter(filter);
-  } else {
-    throw new devourer::Exception("Fluentd option format must be "
-                                  "'hostname:port'");
+  if(std::string::npos == (pos = dst.find(":", 0))) {
+    throw devourer::Exception("Fluentd option format must be "
+                              "'hostname:port'");
   }
+
+  std::string host = dst.substr(0, pos);
+  std::string str_port = dst.substr(pos + 1);
+
+  char *e;
+  unsigned int port = strtoul(str_port.c_str(), &e, 0);
+  if (*e != '\0') {
+    throw devourer::Exception("Invalid port number: " + str_port);
+  }
+    
+  this->logger_->new_forward(host, port);
 }
 
-void Devourer::setdst_filestream(const std::string &fpath,
-                                 const std::string &filter)
-  throw(devourer::Exception) {
-  this->stream_ = new devourer::FileStream(fpath);
-  this->stream_->set_filter(filter);
+void Devourer::setdst_filestream(const std::string &fpath) {
+  this->logger_->new_dumpfile(fpath);
 }
 
-
-void Devourer::setdst_buffer(devourer::Buffer *buf, const std::string &filter)
-  throw(devourer::Exception) {
-  this->stream_ = nullptr;  
+fluent::MsgQueue* Devourer::setdst_msgqueue() {
+  return this->logger_->new_msgqueue();
 }
+
 
 void Devourer::install_module(devourer::Module *module)
   throw(devourer::Exception) {
@@ -157,11 +117,6 @@ void Devourer::start() throw(devourer::Exception) {
 
   this->netcap_->bind_netdec(this->netdec_);
 
-  // Setup output stream.
-  if (this->stream_) {
-    this->stream_->setup();
-  }
-
   // Setup modules
   for(size_t i = 0; i < this->modules_.size(); i++) {
     devourer::Module *module = this->modules_[i];
@@ -174,7 +129,7 @@ void Devourer::start() throw(devourer::Exception) {
         throw devourer::Exception(this->netcap_->errmsg());
       }
     }
-    module->set_stream(this->stream_);
+    module->set_logger(this->logger_);
   }    
   
   this->netcap_->start();

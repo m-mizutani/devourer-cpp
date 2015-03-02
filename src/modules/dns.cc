@@ -27,10 +27,9 @@
 #include "./dns.h"
 #include <iostream>
 #include <string.h>
+#include <fluent.hpp>
 
 #include "../devourer.h"
-#include "../object.h"
-#include "../stream.h"
 #include "../debug.h"
 
 namespace devourer {
@@ -187,21 +186,20 @@ namespace devourer {
       Query *q = dynamic_cast<Query*>(n);
 
       if(!(q->has_reply())) {
-        struct timeval tv = {0, 0};
-        tv.tv_sec = q->last_ts();
-        object::Map *map = new object::Map();
-        map->put("ts", q->last_ts());
-        map->put("client", q->client());
-        map->put("server", q->server());
-        map->put("q_name", q->q_name(0));
-        map->put("status", "timeout");
-        this->emit("dns.tx", map, &tv);
+        fluent::Message *msg = this->logger_->retain_message("dns.tx");
+        msg->set_ts(q->last_ts());
+        msg->set("client", q->client());
+        msg->set("server", q->server());
+        msg->set("q_name", q->q_name(0));
+        msg->set("status", "timeout");
+        this->logger_->emit(msg);
       }
 
       delete n;
     }
   }
 
+  // XXX: Too long function
   void ModDns::recv (swarm::ev_id eid, const swarm::Property &p) {
     uint32_t qflag = p.value("dns.query").uint32();
     uint32_t tx_id = p.value("dns.tx_id").uint32();
@@ -251,25 +249,27 @@ namespace devourer {
         // Found matched query with the response.
         tv.tv_sec = q->last_ts();
         double ts = p.ts() - q->last_ts();
-        object::Map *map = new object::Map();
-        map->put("ts", q->last_ts());
-        map->put("client", q->client());
-        map->put("server", q->server());
-        map->put("q_name", q->q_name(0));
-        map->put("status", "success");
-        map->put("latency", ts);
-        this->emit("dns.tx", map, &tv);
+
+        fluent::Message *msg = this->logger_->retain_message("dns.tx");
+        msg->set_ts(q->last_ts());
+        msg->set("client", q->client());
+        msg->set("server", q->server());
+        msg->set("q_name", q->q_name(0));
+        msg->set("status", "success");
+        msg->set("latency", ts);
+        this->logger_->emit(msg);
         q->set_has_reply(true);
 
         size_t an_max = p.value_size("dns.an_name");
         for(size_t i = 0; i < an_max; i++) {
-          object::Map *m = new object::Map();
-          m->put("client", p.dst_addr());
-          m->put("server", p.src_addr());
-          m->put("name", p.value("dns.an_name", i).repr());
-          m->put("type", p.value("dns.an_type", i).repr());
-          m->put("data", p.value("dns.an_data", i).repr());
-          this->emit("dns.log", m, &tv);
+          fluent::Message *msg = this->logger_->retain_message("dns.log");
+          msg->set_ts(tv.tv_sec);
+          msg->set("client", p.dst_addr());
+          msg->set("server", p.src_addr());
+          msg->set("name", p.value("dns.an_name", i).repr());
+          msg->set("type", p.value("dns.an_type", i).repr());
+          msg->set("data", p.value("dns.an_data", i).repr());
+          this->logger_->emit(msg);
 
           // XXX: Merge A/AAAA record process and CNAME record process
           uint32_t rec_type = p.value("dns.an_type", i).uint32();
@@ -310,14 +310,13 @@ namespace devourer {
 
       } else {
         // Matched query is not found.
-        object::Map *map = new object::Map();
-        tv.tv_sec = p.ts();
-        map->put("ts", p.ts());
-        map->put("client", p.dst_addr());
-        map->put("server", p.src_addr());
-        map->put("q_name", p.value("dns.qd_name").repr());
-        map->put("status", "miss");
-        this->emit("dns.tx", map, &tv);
+        fluent::Message *msg = this->logger_->retain_message("dns.tx");
+        msg->set_ts(p.ts());
+        msg->set("client", p.dst_addr());
+        msg->set("server", p.src_addr());
+        msg->set("q_name", p.value("dns.qd_name").repr());
+        msg->set("status", "miss");
+        this->logger_->emit(msg);
       }
     }
   }
