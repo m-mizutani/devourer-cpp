@@ -55,20 +55,20 @@ Devourer::~Devourer(){
 void Devourer::setdst_fluentd(const std::string &dst) {
   size_t pos;
   if(std::string::npos == (pos = dst.find(":", 0))) {
-    throw devourer::Exception("Fluentd option format must be "
-                              "'hostname:port'");
-  }
+    // Specify only host, use default port
+    this->logger_->new_forward(dst);
+  } else {
+    std::string host = dst.substr(0, pos);
+    std::string str_port = dst.substr(pos + 1);
 
-  std::string host = dst.substr(0, pos);
-  std::string str_port = dst.substr(pos + 1);
-
-  char *e;
-  unsigned int port = strtoul(str_port.c_str(), &e, 0);
-  if (*e != '\0') {
-    throw devourer::Exception("Invalid port number: " + str_port);
-  }
+    char *e;
+    unsigned int port = strtoul(str_port.c_str(), &e, 0);
+    if (*e != '\0') {
+      throw devourer::Exception("Invalid port number: " + str_port);
+    }
     
-  this->logger_->new_forward(host, port);
+    this->logger_->new_forward(host, port);
+  }
 }
 
 void Devourer::setdst_filestream(const std::string &fpath) {
