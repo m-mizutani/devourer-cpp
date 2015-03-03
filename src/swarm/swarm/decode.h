@@ -31,7 +31,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <iostream>
+
 #include "../swarm.h"
 #include "./netdec.h"
 #include "./value.h"
@@ -68,9 +68,8 @@ namespace swarm {
                                         std::vector <std::string> *dec_name);
   };
 
-#define INIT_DECODER(NAME,FUNC)                       \
-  DecoderMap __dec_map_##NAME##_entry(#NAME, FUNC) 
-
+#define INIT_DECODER(NAME,FUNC)                     \
+  DecoderMap __dec_map_##NAME##_entry(#NAME, FUNC)  
   // __attribute__ ((init_priority (60000)))
 
   // developer can confirm if your module is enable by

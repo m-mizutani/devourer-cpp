@@ -55,7 +55,8 @@ namespace devourer {
       int l_pkt_, r_pkt_;
       int l_size_, r_size_;
       std::string proto_;
-      
+      std::string hash_;
+
     public:
       Flow(const swarm::Property &p, const std::string& src_name = "",
            const std::string& dst = "");
@@ -77,7 +78,7 @@ namespace devourer {
       }
       void set_l_name(const std::string& name) { this->l_name_ = name; }
       void set_r_name(const std::string& name) { this->r_name_ = name; }
-
+      
       void build_message(fluent::Message *msg);
       void created_at(struct timeval *tv) const {
         tv->tv_sec = this->created_at_;

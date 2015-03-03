@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SRC_SWARM_COMMON_H__
-#define SRC_SWARM_COMMON_H__
+#ifndef SRC_COMMON_H__
+#define SRC_COMMON_H__
 
 #include <sys/types.h>
 
