@@ -28,25 +28,23 @@
 #ifndef SRC_MODULE_H__
 #define SRC_MODULE_H__
 
+#include <fluent.hpp>
 #include "./swarm/swarm.h"
-#include "./stream.h"
 
 namespace devourer {
   class Module : public swarm::Handler, public swarm::Task {
   private:
-    Stream *stream_;
-    
   protected:
-    void emit(const std::string &tag, object::Object *obj,
-              struct timeval *ts = NULL);
+    fluent::Logger *logger_;
+    
   public:
-    Module() : stream_(NULL) {}
+    Module() : logger_(nullptr) {}
     virtual ~Module() = default;
     virtual const std::vector<std::string>& recv_event() const = 0;
     virtual int task_interval() const = 0;
     virtual void bind_event_id(const std::string &ev_name, swarm::ev_id eid) {
     }
-    void set_stream(Stream *stream) { this->stream_ = stream; }
+    void set_logger(fluent::Logger *logger) { this->logger_ = logger; }
   };
 
 }

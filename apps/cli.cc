@@ -62,10 +62,11 @@ int devourer_main(int argc, char *argv[]) {
   std::string filter = opt["filter"];
   try {
     if (opt.is_set("output")) {
-      devourer->setdst_filestream(opt["output"], filter);
+      devourer->setdst_filestream(opt["output"]);
     }
+    
     if (opt.is_set("fluentd")) {
-      devourer->setdst_fluentd(opt["fluentd"], filter);
+      devourer->setdst_fluentd(opt["fluentd"]);
     }
 
     devourer->start();

@@ -42,23 +42,7 @@ namespace devourer {
     virtual const char* what() const throw() { return this->errmsg_.c_str(); }
   };
 
-  namespace object {
-    class Object;
-  }
-
-  class Stream;
   class Module;
-  
-  class Buffer {
-  private:
-    std::deque<object::Object*> buf_;
-  public:
-    Buffer();
-    ~Buffer();
-    void push(object::Object *obj);
-    object::Object *pop();
-  };
-  
   enum Source {
     PCAP_FILE = 1,
     INTERFACE = 2,
@@ -70,28 +54,28 @@ namespace swarm {
   class NetDec;
 }
 
+namespace fluent {
+  class Logger;
+  class MsgQueue;
+}
+
 class Devourer {
 private:
   std::string target_;
   devourer::Source src_;
   swarm::NetDec *netdec_;
   swarm::NetCap *netcap_;
-  
+  fluent::Logger *logger_;
   std::vector<devourer::Module*> modules_;
-  devourer::Stream *stream_;
 
   void install_module(devourer::Module *module) throw(devourer::Exception);
 
 public:
   Devourer(const std::string &target, devourer::Source src);
   ~Devourer();
-  void setdst_fluentd(const std::string &dst, const std::string& filter="")
-  throw(devourer::Exception);
-  void setdst_filestream(const std::string &fpath,
-                         const std::string& filter="")
-    throw(devourer::Exception);
-  void setdst_buffer(devourer::Buffer *buf,
-                     const std::string &filter="") throw(devourer::Exception);
+  void setdst_fluentd(const std::string &dst);
+  void setdst_filestream(const std::string &fpath);
+  fluent::MsgQueue* setdst_msgqueue();
 
   void set_filter(const std::string &filter) throw(devourer::Exception);
   void enable_verbose();

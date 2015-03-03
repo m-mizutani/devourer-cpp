@@ -34,7 +34,6 @@
 #include "../module.h"
 #include "../devourer.h"
 #include "../lru-hash.h"
-#include "../object.h"
 
 namespace devourer {
   class ModDns;
@@ -79,7 +78,7 @@ namespace devourer {
       void set_l_name(const std::string& name) { this->l_name_ = name; }
       void set_r_name(const std::string& name) { this->r_name_ = name; }
 
-      void build_message(object::Map *msg);
+      void build_message(fluent::Message *msg);
       void created_at(struct timeval *tv) const {
         tv->tv_sec = this->created_at_;
         tv->tv_usec = 0;
