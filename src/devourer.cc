@@ -72,7 +72,11 @@ void Devourer::setdst_fluentd(const std::string &dst) {
 }
 
 void Devourer::setdst_filestream(const std::string &fpath) {
-  this->logger_->new_dumpfile(fpath);
+  if (fpath == "-") {
+    this->logger_->new_dumpfile(1); // stdout
+  } else {
+    this->logger_->new_dumpfile(fpath);
+  }
 }
 
 fluent::MsgQueue* Devourer::setdst_msgqueue() {
