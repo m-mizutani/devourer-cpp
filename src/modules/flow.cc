@@ -121,6 +121,7 @@ namespace devourer {
         msg->set_ts(tv.tv_sec);
         msg->set("src_addr", p.src_addr());
         msg->set("dst_addr", p.dst_addr());
+        msg->set("hash", p.hash_hex());
         if (!src.empty()) {
           msg->set("src_name", src);
         }
@@ -132,6 +133,7 @@ namespace devourer {
           msg->set("src_port", p.src_port());
           msg->set("dst_port", p.dst_port());
         }
+        
         debug(FLOW_DBG, "new flow %s(%s)->%s(%s)",
               p.src_addr().c_str(), src.c_str(), 
               p.dst_addr().c_str(), dst.c_str());
@@ -141,10 +143,25 @@ namespace devourer {
 
       flow->update(p);
 
+      auto it = this->update_map_.find(flow->hash());
+      if (it == this->update_map_.end()) {
+        this->update_map_.insert(std::make_pair(flow->hash(), p.len()));
+      } else {
+        it->second += p.len();
+      }
     }
   }
   void ModFlow::exec (const struct timespec &ts) {
-    
+    fluent::Message *msg = this->logger_->retain_message("flow.update");
+    msg->set_ts(ts.tv_sec);
+    fluent::Message::Map *map = msg->retain_map("flow_size");
+    for (auto f : this->update_map_) {
+      map->set(swarm::Property::hash_value2hex(f.first),
+               static_cast<unsigned int>(f.second));
+    }
+    this->update_map_.clear();
+    this->logger_->emit(msg);
+
   }
   const std::vector<std::string>& ModFlow::recv_event() const {
     return ModFlow::recv_events_;
@@ -162,6 +179,7 @@ namespace devourer {
     l_size_(0), r_size_(0)
   {
     this->hv_ = p.hash_value();
+    this->hv_hex_ = p.hash_hex();
     const void *key = p.ssn_label(&this->keylen_);
     this->key_ = malloc(this->keylen_);
     memcpy(this->key_, key, this->keylen_);
@@ -212,7 +230,7 @@ namespace devourer {
     msg->set("r_pkt",  this->r_pkt_);
     msg->set("init_ts", static_cast<unsigned int>(this->created_at_));
     msg->set("last_ts", static_cast<unsigned int>(this->updated_at_));
-      
+    msg->set("hash",   this->hv_hex_);
       
     if (!this->l_name_.empty()) {
       msg->set("l_name", this->l_name_);

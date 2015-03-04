@@ -263,9 +263,12 @@ namespace swarm {
     return this->hash_value_ ;
   }
   std::string Property::hash_hex () const {
+    return Property::hash_value2hex(this->hash_value_);
+  }
+  std::string Property::hash_value2hex(uint64_t hv) {
     std::stringstream ss;
     ss << std::setw(16) << std::setfill('0') <<
-      std::hex << std::uppercase << this->hash_value_;
+      std::hex << std::uppercase << hv ;
     return ss.str();
   }
     

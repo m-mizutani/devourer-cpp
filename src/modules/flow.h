@@ -55,13 +55,14 @@ namespace devourer {
       int l_pkt_, r_pkt_;
       int l_size_, r_size_;
       std::string proto_;
-      std::string hash_;
+      std::string hv_hex_;
 
     public:
       Flow(const swarm::Property &p, const std::string& src_name = "",
            const std::string& dst = "");
       ~Flow();
       uint64_t hash() { return this->hv_; }
+      const std::string& hash_hex() { return this->hv_hex_; }
       bool match(const void *key, size_t len) {
         return (len == this->keylen_ && 0 == memcmp(key, this->key_, len));
       }
@@ -94,6 +95,7 @@ namespace devourer {
     swarm::ev_id ev_ipv4_;
     swarm::ev_id ev_ipv6_;
     time_t last_ts_;
+    std::map<uint64_t, size_t> update_map_;
     
   public:
     ModFlow(ModDns *mod_dns);
