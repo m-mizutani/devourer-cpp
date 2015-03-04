@@ -8,7 +8,8 @@ $(document).ready(function() {
   var updated_flow = {};
   var label_map = {};
   var size_map = {};
-  var extent_map = {};
+  var max_timeout = 640;
+  
   socket.on('flow.update', function (msg) {
     $('div.flow').removeClass('active');
     for (var hv in msg.flow_size) {
@@ -25,22 +26,26 @@ $(document).ready(function() {
       return;
     }
     var hv = msg.hash;
+    if (label_map[hv] !== undefined) {
+      return;
+    }
+    
     var txt = '(' + msg.proto + ') ' +
         (msg.src_name !== undefined ? msg.src_name : msg.src_addr) +
-        ":" + msg.src_port + ' -> ' +
-        (msg.dst_name !== undefined ? msg.dst_name : msg.dst_addr) +
-        ":" + msg.dst_port;
+        // ":" + msg.src_port +
+        ' <-> ' +
+        (msg.dst_name !== undefined ? msg.dst_name : msg.dst_addr);
+        // ":" + msg.dst_port;
     label_map[hv] = txt;
-    var mtr = random(hv);
-    console.log(mtr);
-    data_set.push(mtr);
+    console.log(txt + ' -> ' + hv);
+    var mtr = create_metrics(hv);
+    data_set.unshift(mtr);
     d3.select("div#cubism").call(function(div) {
       div.selectAll(".horizon")
-          .data(data_set)
+          .data(data_set, function(d) { return d.toString(); })
           .enter().append("div")
           .attr("class", "horizon")
-          // .call(context.horizon().extent([0, 1e5]));
-          .call(context.horizon());
+          .call(context.horizon().height(25));
     });
 
 /*    
@@ -48,12 +53,10 @@ $(document).ready(function() {
     $('div.flow#' + msg.hash).text(txt);
 */
     
-    var max_timeout = 960;
     function set_flow_timeout(timeout) {
       setTimeout(function() {
         var diff = get_unixtime() - updated_flow[hv];
         if (updated_flow[hv] !== undefined && diff < max_timeout) {
-          console.log(diff);
           set_flow_timeout(max_timeout - diff);
         } else {
           for (var i = 0; i < data_set.length; i++) {
@@ -76,32 +79,30 @@ $(document).ready(function() {
     set_flow_timeout(max_timeout);
   });
 
-
-  function random(hv) {
+  function create_metrics(hash_val) {
+    delete size_map[hash_val];
     var value = 0,
-    values = [],
-    i = 0,
-    last;
+        values = [],
+        i = 0,
+        last;
     return context.metric(function(start, stop, step, callback) {
       start = +start, stop = +stop;
       if (isNaN(last)) last = start;
       
-      if (size_map[hv] !== undefined) {
-        value = size_map[hv];
-        delete size_map[hv];
+      if (size_map[hash_val] !== undefined) {
+        value = size_map[hash_val];
+        delete size_map[hash_val];
       } else {
         value = 0;
       }
-      
+
       while (last < stop) {
         last += step;
-        // value = Math.max(-10, Math.min(10, value + .8 * Math.random() - .4 + .2 * Math.cos(i += .2)));
         values.push(value);
-        delete size
       }
 
       callback(null, values = values.slice((start - stop) / step));
-    }, label_map[hv]);
+    }, label_map[hash_val]);
   }
 
 
@@ -110,10 +111,8 @@ $(document).ready(function() {
       .serverDelay(0)
       .clientDelay(0)
       .step(1e3)
-      .size(960);
+      .size(max_timeout);
 
-  var foo = random("foo"),
-  bar = random("bar");
   var data_set = [];
   
   d3.select("div#cubism").call(function(div) {
@@ -121,13 +120,7 @@ $(document).ready(function() {
     div.append("div")
         .attr("class", "axis")
         .call(context.axis().orient("top"));
-/*
-    div.selectAll(".horizon")
-        .data([foo, bar, foo.add(bar), foo.subtract(bar)])
-        .enter().append("div")
-        .attr("class", "horizon")
-        .call(context.horizon().extent([-20, 20]));
-*/
+
     div.append("div")
         .attr("class", "rule")
         .call(context.rule());

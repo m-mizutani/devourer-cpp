@@ -42,6 +42,7 @@ namespace devourer {
     class Flow : public LRUHash::Node {
     private:
       uint64_t hv_;
+      size_t flow_hv_;
       void *key_;
       size_t keylen_;
       time_t created_at_;
@@ -56,12 +57,13 @@ namespace devourer {
       int l_size_, r_size_;
       std::string proto_;
       std::string hv_hex_;
-
+      std::string flow_hv_hex_;
     public:
       Flow(const swarm::Property &p, const std::string& src_name = "",
            const std::string& dst = "");
       ~Flow();
       uint64_t hash() { return this->hv_; }
+      const std::string& flow_hv_hex() const { return this->flow_hv_hex_; }
       const std::string& hash_hex() { return this->hv_hex_; }
       bool match(const void *key, size_t len) {
         return (len == this->keylen_ && 0 == memcmp(key, this->key_, len));
@@ -95,7 +97,7 @@ namespace devourer {
     swarm::ev_id ev_ipv4_;
     swarm::ev_id ev_ipv6_;
     time_t last_ts_;
-    std::map<uint64_t, size_t> update_map_;
+    std::map<std::string, size_t> update_map_;
     
   public:
     ModFlow(ModDns *mod_dns);

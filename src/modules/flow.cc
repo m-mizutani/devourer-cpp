@@ -27,6 +27,10 @@
 #include <fluent.hpp>
 #include "./flow.h"
 #include <iostream>
+#include <functional>
+#include <sstream>
+#include <iomanip>
+
 #include "../swarm/swarm.h"
 #include "../devourer.h"
 #include "../debug.h"
@@ -121,7 +125,7 @@ namespace devourer {
         msg->set_ts(tv.tv_sec);
         msg->set("src_addr", p.src_addr());
         msg->set("dst_addr", p.dst_addr());
-        msg->set("hash", p.hash_hex());
+        msg->set("hash", flow->hash_hex());
         if (!src.empty()) {
           msg->set("src_name", src);
         }
@@ -143,9 +147,9 @@ namespace devourer {
 
       flow->update(p);
 
-      auto it = this->update_map_.find(flow->hash());
+      auto it = this->update_map_.find(flow->hash_hex());
       if (it == this->update_map_.end()) {
-        this->update_map_.insert(std::make_pair(flow->hash(), p.len()));
+        this->update_map_.insert(std::make_pair(flow->hash_hex(), p.len()));
       } else {
         it->second += p.len();
       }
@@ -156,8 +160,7 @@ namespace devourer {
     msg->set_ts(ts.tv_sec);
     fluent::Message::Map *map = msg->retain_map("flow_size");
     for (auto f : this->update_map_) {
-      map->set(swarm::Property::hash_value2hex(f.first),
-               static_cast<unsigned int>(f.second));
+      map->set(f.first, static_cast<unsigned int>(f.second));               
     }
     this->update_map_.clear();
     this->logger_->emit(msg);
@@ -179,7 +182,25 @@ namespace devourer {
     l_size_(0), r_size_(0)
   {
     this->hv_ = p.hash_value();
-    this->hv_hex_ = p.hash_hex();
+
+    // L4 mode
+    // this->hv_hex_ = p.hash_hex();
+
+    // L3 mode
+    {
+      const std::string &sp = (src.empty()) ? p.src_addr() : src;
+      const std::string &dp = (dst.empty()) ? p.dst_addr() : dst;
+      const std::string label = sp + "=" + dp + "=" + p.proto();
+      std::hash<std::string> hash_fn;
+      this->flow_hv_ = 0;
+      this->flow_hv_ = hash_fn(label);
+      std::stringstream ss;
+      ss << std::setw(16) << std::setfill('0') <<
+        std::hex << std::uppercase << this->flow_hv_ ;
+      this->hv_hex_ = ss.str();
+    }    
+
+    
     const void *key = p.ssn_label(&this->keylen_);
     this->key_ = malloc(this->keylen_);
     memcpy(this->key_, key, this->keylen_);
@@ -201,6 +222,7 @@ namespace devourer {
       this->r_name_ = src;          this->l_name_ = dst;
     }
     this->proto_ = p.proto();
+
   }
 
   ModFlow::Flow::~Flow() {

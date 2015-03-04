@@ -7,7 +7,6 @@ body {
   margin: auto;
   margin-top: 40px;
   margin-bottom: 4em;
-  width: 960px;
 }
 
 #body {
@@ -198,6 +197,7 @@ h1, h2 {
   position: absolute;
   text-shadow: 0 1px 0 rgba(255,255,255,.5);
   white-space: nowrap;
+  font-size: 12px;
 }
 
 .horizon .title {
@@ -209,6 +209,9 @@ h1, h2 {
 }
 
 .line {
+  margin: 50px;
+  
+  
   background: #000;
   opacity: .2;
   z-index: 2;
