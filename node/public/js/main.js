@@ -56,18 +56,21 @@ $(document).ready(function() {
     function set_flow_timeout(timeout) {
       setTimeout(function() {
         var diff = get_unixtime() - updated_flow[hv];
+        console.log('check ' + txt + ': ' + diff);
         if (updated_flow[hv] !== undefined && diff < max_timeout) {
+          console.log('extend...');
           set_flow_timeout(max_timeout - diff);
         } else {
           for (var i = 0; i < data_set.length; i++) {
-            if (data_set[i] === mtr) {
+            if (data_set[i].toString() === mtr.toString()) {
+              console.log('removing ' + data_set[i].toString());
               data_set.splice(i, 1);
               break;
             }
           }
           d3.select("div#cubism").call(function(div) {
             div.selectAll('.horizon')
-                .data(data_set)
+                .data(data_set, function(d) { return d.toString(); })
                 .exit()
                 .remove();
           });    

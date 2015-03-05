@@ -37,7 +37,7 @@ TARGET_LINK_LIBRARIES(devourer fluent pcap ev)
 
 # Test code
 ADD_EXECUTABLE(devourer-test ${TESTSRCS})
-TARGET_LINK_LIBRARIES(devourer-test devourer)
+TARGET_LINK_LIBRARIES(devourer-test devourer pthread)
 
 # Application (CLI) code
 ADD_EXECUTABLE(devourer-bin apps/cli.cc apps/optparse.cc)
