@@ -12,10 +12,11 @@ Prerequisite
 ------
 
 - OS: Linux >= 3.2.0, MacOSX >= 10.9.5
+- C++11 required
 - Libraries
     - libev
 	- libpcap
-    - libswarm: [https://github.com/m-mizutani/swarm](https://github.com/m-mizutani/swarm)
+	- libfluent: https://github.com/m-mizutani/libfluent
 
 Usage
 ------
