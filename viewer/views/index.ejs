@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= title %></title>
+    <title>Devourer</title>
     <link rel="stylesheet" href="/css/style.css" />
-    <link rel="stylesheet" href="/css/cubism.css" />
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/js/jquery-1.11.1.min.js"></script>
-    <script type="text/javascript" src="/js/d3.v2.js"></script>
-    <script type="text/javascript" src="/js/cubism.v1.min.js"></script>
-    <script type="text/javascript" src="/js/main.js"></script>
+    <script type="text/javascript" src="/js/index.js"></script>
   </head>
   <body>
-    <h1><%= title %></h1>
-    <div id="console"></div>
-    <div id="cubism"></div>
+    <h1>Devourer</h1>
+    <ul>
+      <li><a href="/flow">Flow</a></li>
+    </ul>
+    <h2>Recieved Event</h2>
+    <div id="event_name"></div>
+    <div id="event_data"><pre></pre></div> 
   </body>
 </html>

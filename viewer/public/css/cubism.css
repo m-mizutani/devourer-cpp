@@ -6,6 +6,8 @@ body {
   font-family: "Helvetica Neue", Helvetica, sans-serif;
   margin: auto;
   margin-top: 40px;
+  margin-left: 20px;
+  
   margin-bottom: 4em;
 }
 
@@ -209,10 +211,15 @@ h1, h2 {
 }
 
 .line {
-  margin: 50px;
+  margin: 20px;
   
   
   background: #000;
   opacity: .2;
   z-index: 2;
 }
+
+div#cubism {
+  width: 640px;
+}
+
