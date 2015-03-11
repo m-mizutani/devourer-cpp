@@ -82,8 +82,8 @@ var fluent_server = net.createServer(function(c) {
   ms.addListener('msg', function(m) {
     io.sockets.emit(m[0], m[2]);
   });
-  console.log('connected');
+  console.log('devourer connected');
 });
 fluent_server.listen(fluent_port, function() {
-  console.log('listening ' + fluent_port);
+  console.log('listening fluent port: ' + fluent_port);
 });
