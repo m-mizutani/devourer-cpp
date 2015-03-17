@@ -34,6 +34,7 @@
 #include "./modules/dns.h"
 #include "./modules/flow.h"
 
+
 Devourer::Devourer(const std::string &target, devourer::Source src) :
   target_(target), src_(src), netcap_(NULL), logger_(new fluent::Logger())
 {

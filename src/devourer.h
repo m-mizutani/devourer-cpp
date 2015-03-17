@@ -33,6 +33,8 @@
 #include <string>
 
 namespace devourer {
+  static const std::string VERSION("0.1.0");
+  
   class Exception : public std::exception {
   private:
     std::string errmsg_;

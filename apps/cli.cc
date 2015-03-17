@@ -38,28 +38,31 @@ int devourer_main(int argc, char *argv[]) {
     .help("Fluentd destination, e.g. 127.0.0.1:24224");
   psr.add_option("-o").dest("output")
     .help("Log file path, stdout if '-'");
-  psr.add_option("-t").dest("filter").set_default("")
-    .help("Tag filter with regular expression (e.g. dns\\..*");
-  psr.add_option("-v").dest("verbose")
-    .help("Verbose mode");
+  psr.add_option("-v").dest("version").action("store_true")
+    .help("Show version");
   
   optparse::Values& opt = psr.parse_args(argc, argv);
   std::vector <std::string> args = psr.args();
 
 
+  if (opt.get("version")) {
+    std::cout << "Version: " << devourer::VERSION << std::endl;
+    return true;
+  }
+  
+  
   Devourer *devourer = NULL;
   if (opt.is_set("read_file")) {
     devourer = new Devourer(opt["read_file"], devourer::PCAP_FILE);
   } else if (opt.is_set("interface")) {
     devourer = new Devourer(opt["interface"], devourer::INTERFACE);
   }
-    
+  
   if (!devourer) {
     std::cerr << "One from file or interface should be specified" << std::endl;
     return false;
   }
 
-  std::string filter = opt["filter"];
   try {
     if (opt.is_set("output")) {
       devourer->setdst_filestream(opt["output"]);
