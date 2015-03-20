@@ -7,6 +7,10 @@ Devourer is live packet capture and statistics tool for multipurpose.
   - Query latency
   - Response loss rate
   - Response without query
+- Flow
+  - IP address, port, protocol
+  - Resolved Domain Name
+  - Transferred data size and packet count
 
 Prerequisite
 ------
@@ -14,9 +18,9 @@ Prerequisite
 - OS: Linux >= 3.2.0, MacOSX >= 10.9.5
 - C++11 required
 - Libraries
-    - libev
-	- libpcap
-	- libfluent: https://github.com/m-mizutani/libfluent
+  - libev
+  - libpcap
+  - libfluent: https://github.com/m-mizutani/libfluent
 
 Install
 ------
@@ -34,11 +38,13 @@ Install
 % cmake -DWITH_FLUENT=../libfluent . && make
 ```
 
-
 Usage
 ------
 
+To be wrtten
 
+Output
+------
 
 To be wrtten
 
