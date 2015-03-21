@@ -126,12 +126,18 @@ namespace devourer {
         msg->set("src_addr", p.src_addr());
         msg->set("dst_addr", p.dst_addr());
         msg->set("hash", flow->hash_hex());
+        
         if (!src.empty()) {
           msg->set("src_name", src);
+        } else {
+          msg->set_nil("src_name");
         }
         if (!dst.empty()) {
           msg->set("dst_name", dst);
+        } else {
+          msg->set_nil("dst_name");
         }
+        
         msg->set("proto", p.proto());
         if (p.has_port()) {
           msg->set("src_port", p.src_port());
