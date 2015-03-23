@@ -74,7 +74,15 @@ Output Format
 
 ### dns.log
 
-
+```
+{
+  "client"=>"10.0.0.130", # Client IP address
+  "data"=>"10.2.3.4",     # Result data
+  "name"=>"example.com.", # Query name
+  "server"=>"10.0.0.1",   # DNS server IP address
+  "type"=>"A"             # Data type
+}
+```
 
 ### flow.new
 
