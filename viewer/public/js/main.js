@@ -31,10 +31,10 @@ $(document).ready(function() {
     }
     
     var txt = '(' + msg.proto + ') ' +
-        (msg.src_name !== undefined ? msg.src_name : msg.src_addr) +
+        (msg.src_name !== null ? msg.src_name : msg.src_addr) +
         // ":" + msg.src_port +
         ' <-> ' +
-        (msg.dst_name !== undefined ? msg.dst_name : msg.dst_addr);
+        (msg.dst_name !== null ? msg.dst_name : msg.dst_addr);
         // ":" + msg.dst_port;
     label_map[hv] = txt;
     console.log(txt + ' -> ' + hv);

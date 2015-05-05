@@ -190,9 +190,10 @@ namespace devourer {
     this->hv_ = p.hash_value();
 
     // L4 mode
-    // this->hv_hex_ = p.hash_hex();
+    this->hv_hex_ = p.hash_hex();
 
     // L3 mode
+    /*
     {
       const std::string &sp = (src.empty()) ? p.src_addr() : src;
       const std::string &dp = (dst.empty()) ? p.dst_addr() : dst;
@@ -205,7 +206,7 @@ namespace devourer {
         std::hex << std::uppercase << this->flow_hv_ ;
       this->hv_hex_ = ss.str();
     }    
-
+    */
     
     const void *key = p.ssn_label(&this->keylen_);
     this->key_ = malloc(this->keylen_);

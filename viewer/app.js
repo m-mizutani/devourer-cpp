@@ -80,6 +80,7 @@ var fluent_port = 24224;
 var fluent_server = net.createServer(function(c) {
   var ms = new msgpack.Stream(c);
   ms.addListener('msg', function(m) {
+    console.log(m);
     io.sockets.emit(m[0], m[2]);
   });
   console.log('devourer connected');
