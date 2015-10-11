@@ -24,14 +24,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <fluent.hpp>
 #include "./flow.h"
+
+#include <fluent.hpp>
+#include <swarm.hpp>
+
 #include <iostream>
 #include <functional>
 #include <sstream>
 #include <iomanip>
 
-#include "../swarm/swarm.h"
 #include "../devourer.h"
 #include "../debug.h"
 #include "./dns.h"

@@ -29,7 +29,7 @@
 #define SRC_MODULE_H__
 
 #include <fluent.hpp>
-#include "./swarm/swarm.h"
+#include <swarm.hpp>
 
 namespace devourer {
   class Module : public swarm::Handler, public swarm::Task {
