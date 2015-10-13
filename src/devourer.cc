@@ -26,7 +26,7 @@
 
 #include <iostream>
 #include <fluent.hpp>
-#include "./swarm/swarm.h"
+#include <swarm.hpp>
 #include "./devourer.h"
 #include "./debug.h"
 

@@ -11,7 +11,9 @@ endif()
 if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
-	 
+
+      
+
 SET(CMAKE_CXX_FLAGS_RELEASE "-Wall -O2 -std=c++0x")
 SET(CMAKE_CXX_FLAGS_DEBUG   "-Wall -O0 -std=c++0x -g")
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -21,17 +23,25 @@ OPTION(WITH_FLUENT "libfluent prefix" ".")
 SET(FLUENT_INCLUDES  ${WITH_FLUENT}/src)
 SET(FLUENT_LIBRARIES ${WITH_FLUENT}/lib)
 
-INCLUDE_DIRECTORIES(${INC_DIR} ${FLUENT_INCLUDES} ./src)
-LINK_DIRECTORIES(${LIB_DIR} ${FLUENT_LIBRARIES})
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    INCLUDE_DIRECTORIES(/usr/local/include)
+    LINK_DIRECTORIES(/usr/local/lib)
+ENDIF()
+
+INCLUDE_DIRECTORIES(${INC_DIR} ${FLUENT_INCLUDES} ./src ./external/swarm/src)
+LINK_DIRECTORIES(${LIB_DIR} ${FLUENT_LIBRARIES} ./external/)
 FILE(GLOB BASESRCS 
 	  "src/*.cc" "src/*.h" "src/modules/*.cc" "src/modules/*.h"
-	  "src/swarm/*.cc" "src/swarm/*.h" "src/swarm/swarm/*.h" 
-	  "src/swarm/utils/*.cc" "src/swarm/utils/*.h"
-	  "src/swarm/proto/*.cc" "src/swarm/proto/*.h"
-)
+	  "external/swarm/src/swarm/*.hpp"
+	  "external/swarm/src/*.cc" "external/swarm/src/*.hpp"
+	  "external/swarm/src/proto/*.cc" "external/swarm/src/proto/*.h"
+	  )
 FILE(GLOB TESTSRCS "test/*.cc")
 
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
+
+
 
 # Module code
 ADD_LIBRARY(devourer SHARED ${BASESRCS})
