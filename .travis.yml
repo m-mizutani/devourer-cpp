@@ -8,6 +8,10 @@ cache:
 os:
   - osx
   - linux
+matrix:
+  exclude:
+    - os: linux
+      compiler: clang
 
 before_install:
   # update packages

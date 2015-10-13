@@ -40,7 +40,7 @@ namespace devourer {
     std::string errmsg_;
   public:
     Exception(const std::string &errmsg) : errmsg_(errmsg) {}
-    ~Exception() {}
+    virtual ~Exception() throw() {}
     virtual const char* what() const throw() { return this->errmsg_.c_str(); }
   };
 
