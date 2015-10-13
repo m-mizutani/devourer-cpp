@@ -22,7 +22,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update ; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install msgpack libev ; fi
   - git clone https://github.com/m-mizutani/libfluent.git
-  - cd libfluent && cmake . && make && sudo make install && cd..
+  - cd libfluent && cmake . && make && sudo make install && cd ..
        
 before_script:  
   - cmake .
