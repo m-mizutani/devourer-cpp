@@ -33,7 +33,10 @@
 
 namespace devourer {
   class ModLocal : public Module {
-
+  private:
+    static const std::vector<std::string> recv_events_;
+    std::vector<swarm::ev_id> recv_events_id_;
+    
   public:
     ModLocal();
     ~ModLocal();

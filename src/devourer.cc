@@ -33,7 +33,7 @@
 #include "./module.h"
 #include "./modules/dns.h"
 #include "./modules/flow.h"
-
+#include "./modules/local.h"
 
 Devourer::Devourer(const std::string &target, devourer::Source src) :
   target_(target), src_(src), netcap_(NULL), logger_(new fluent::Logger())
@@ -42,8 +42,10 @@ Devourer::Devourer(const std::string &target, devourer::Source src) :
   
   devourer::ModDns *mod_dns = new devourer::ModDns();
   devourer::ModFlow *mod_flow = new devourer::ModFlow(mod_dns);
+  devourer::ModLocal *mod_local = new devourer::ModLocal();
   this->install_module(mod_dns);
   this->install_module(mod_flow);
+  this->install_module(mod_local);
 }
 
 Devourer::~Devourer(){
