@@ -55,22 +55,35 @@ namespace devourer {
     }
     
     if (eid == this->recv_events_id_[MDNS_PACKET]) {
-      size_t answer_num = p.value_size("mdns.an_type");
+      fluent::Message *msg = this->logger_->retain_message("mdns");
+      msg->set_ts(p.tv_sec());
 
-      if (answer_num > 0) {
-        fluent::Message *msg = this->logger_->retain_message("mdns.answer");
-        msg->set_ts(p.tv_sec());
-        fluent::Message::Array *arr = msg->retain_array("answer");
-
-        for (size_t i = 0; i < answer_num; i++) {
-          fluent::Message::Map *m = arr->retain_map();
-          m->set("type", p.value("mdns.an_type", i).repr());
-          m->set("name", p.value("mdns.an_name", i).repr());
-          m->set("data", p.value("mdns.an_data", i).repr());
-        }
+      static const std::vector<std::string> type_name = {
+        "query", "answer", "auth_pr", "add_pr",
+      };
+      static const std::vector<std::string> base_name = {
+        "qd", "an", "ns", "ar",
+      };
+      
+      for (size_t i = 0; i < type_name.size(); i++) {
+        std::string name_key = "mdns." + base_name[i] + "_name";
+        std::string type_key = "mdns." + base_name[i] + "_type";
+        std::string data_key = "mdns." + base_name[i] + "_data";
+        size_t c = p.value_size(name_key);
         
-        this->logger_->emit(msg);
+        if (c > 0) {
+          fluent::Message::Array *arr = msg->retain_array(type_name[i]);
+          
+          for (size_t n = 0; n < c; n++) {
+            fluent::Message::Map *m = arr->retain_map();
+            m->set("type", p.value(type_key, n).repr());
+            m->set("name", p.value(name_key, n).repr());
+            m->set("data", p.value(data_key, n).repr());
+          }
+        }
       }
+      
+      this->logger_->emit(msg);
     }
   }
   
