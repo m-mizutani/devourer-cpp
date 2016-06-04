@@ -34,7 +34,9 @@ FILE(GLOB BASESRCS
 	  "src/*.cc" "src/*.h" "src/modules/*.cc" "src/modules/*.h"
 	  "external/swarm/src/swarm/*.hpp"
 	  "external/swarm/src/*.cc" "external/swarm/src/*.hpp"
-	  "external/swarm/src/proto/*.cc" "external/swarm/src/proto/*.h"
+	  "external/swarm/src/proto/*.cc" 
+	  "external/swarm/src/proto/utils/*.cc"
+	  "external/swarm/src/proto/utils/*.hpp"
 	  )
 FILE(GLOB TESTSRCS "test/*.cc")
 
