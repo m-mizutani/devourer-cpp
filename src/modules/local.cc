@@ -45,19 +45,19 @@ namespace devourer {
   
   void ModLocal::recv(swarm::ev_id eid, const swarm::Property &p) {
     if (eid == this->recv_events_id_[ARP_REQUEST]) {
-      fluent::Message *msg = this->logger_->retain_message("arp.request");
+      fluent::Message *msg = this->fluent_->retain_message("arp.request");
       msg->set_ts(p.tv_sec());
       msg->set("src_hw", p.value("arp.src_hw").repr());
       msg->set("dst_hw", p.value("arp.dst_hw").repr());
       msg->set("src_pr", p.value("arp.src_pr").repr());
       msg->set("dst_pr", p.value("arp.dst_pr").repr());
-      this->logger_->emit(msg);
+      this->fluent_->emit(msg);
     }
 
     // ToDo: change to flat object scheme, do not use nest
       /*
     if (eid == this->recv_events_id_[MDNS_PACKET]) {
-      fluent::Message *msg = this->logger_->retain_message("mdns");
+      fluent::Message *msg = this->fluent_->retain_message("mdns");
       msg->set_ts(p.tv_sec());
 
       static const std::vector<std::string> type_name = {
@@ -85,7 +85,7 @@ namespace devourer {
         }
       }
       
-      this->logger_->emit(msg);
+      this->fluent_->emit(msg);
     }
       */
   }

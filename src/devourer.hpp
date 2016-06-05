@@ -67,7 +67,7 @@ private:
   devourer::Source src_;
   swarm::NetDec *netdec_;
   swarm::NetCap *netcap_;
-  fluent::Logger *logger_;
+  fluent::Logger *fluent_;
   std::vector<devourer::Module*> modules_;
 
   void install_module(devourer::Module *module) throw(devourer::Exception);

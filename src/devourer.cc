@@ -36,7 +36,7 @@
 #include "./modules/local.hpp"
 
 Devourer::Devourer(const std::string &target, devourer::Source src) :
-  target_(target), src_(src), netcap_(NULL), logger_(new fluent::Logger())
+  target_(target), src_(src), netcap_(NULL), fluent_(new fluent::Logger())
 {
   this->netdec_ = new swarm::NetDec();
   
@@ -47,7 +47,7 @@ Devourer::Devourer(const std::string &target, devourer::Source src) :
   this->install_module(mod_flow);
   this->install_module(mod_local);
 
-  this->logger_->set_tag_prefix("devourer");
+  this->fluent_->set_tag_prefix("devourer");
 }
 
 Devourer::~Devourer(){
@@ -61,7 +61,7 @@ void Devourer::setdst_fluentd(const std::string &dst) {
   size_t pos;
   if(std::string::npos == (pos = dst.find(":", 0))) {
     // Specify only host, use default port
-    this->logger_->new_forward(dst);
+    this->fluent_->new_forward(dst);
   } else {
     std::string host = dst.substr(0, pos);
     std::string str_port = dst.substr(pos + 1);
@@ -72,20 +72,20 @@ void Devourer::setdst_fluentd(const std::string &dst) {
       throw devourer::Exception("Invalid port number: " + str_port);
     }
     
-    this->logger_->new_forward(host, port);
+    this->fluent_->new_forward(host, port);
   }
 }
 
 void Devourer::setdst_filestream(const std::string &fpath) {
   if (fpath == "-") {
-    this->logger_->new_dumpfile(1); // stdout
+    this->fluent_->new_dumpfile(1); // stdout
   } else {
-    this->logger_->new_dumpfile(fpath);
+    this->fluent_->new_dumpfile(fpath);
   }
 }
 
 fluent::MsgQueue* Devourer::setdst_msgqueue() {
-  return this->logger_->new_msgqueue();
+  return this->fluent_->new_msgqueue();
 }
 
 
@@ -138,7 +138,7 @@ void Devourer::start() throw(devourer::Exception) {
         throw devourer::Exception(this->netcap_->errmsg());
       }
     }
-    module->set_logger(this->logger_);
+    module->set_fluent(this->fluent_);
   }    
   
   this->netcap_->start();

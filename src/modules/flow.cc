@@ -95,10 +95,10 @@ namespace devourer {
         } else {
           debug(FLOW_DBG, "deleting [%016llX]", flow->hash());
 
-          fluent::Message *msg = this->logger_->retain_message("flow.log");
+          fluent::Message *msg = this->fluent_->retain_message("flow.log");
           flow->build_message(msg);
           msg->set_ts(tv.tv_sec);
-          this->logger_->emit(msg);
+          this->fluent_->emit(msg);
           delete flow;
         }
       }
@@ -123,7 +123,7 @@ namespace devourer {
 
         flow = new Flow(p, src, dst);
 
-        fluent::Message *msg = this->logger_->retain_message("flow.new");
+        fluent::Message *msg = this->fluent_->retain_message("flow.new");
         msg->set_ts(tv.tv_sec);
         msg->set("src_addr", p.src_addr());
         msg->set("dst_addr", p.dst_addr());
@@ -145,7 +145,7 @@ namespace devourer {
         debug(FLOW_DBG, "new flow %s(%s)->%s(%s)",
               p.src_addr().c_str(), src.c_str(), 
               p.dst_addr().c_str(), dst.c_str());
-        this->logger_->emit(msg);
+        this->fluent_->emit(msg);
         this->flow_table_.put(this->flow_timeout_, flow);
       }
 
@@ -161,14 +161,14 @@ namespace devourer {
   }
   void ModFlow::exec (const struct timespec &ts) {
     /*
-    fluent::Message *msg = this->logger_->retain_message("flow.update");
+    fluent::Message *msg = this->fluent_->retain_message("flow.update");
     msg->set_ts(ts.tv_sec);
     fluent::Message::Map *map = msg->retain_map("flow_size");
     for (auto f : this->update_map_) {
       map->set(f.first, static_cast<unsigned int>(f.second));               
     }
     this->update_map_.clear();
-    this->logger_->emit(msg);
+    this->fluent_->emit(msg);
     */
   }
   const std::vector<std::string>& ModFlow::recv_event() const {

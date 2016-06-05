@@ -35,16 +35,16 @@ namespace devourer {
   class Module : public swarm::Handler, public swarm::Task {
   private:
   protected:
-    fluent::Logger *logger_;
+    fluent::Logger *fluent_;
     
   public:
-    Module() : logger_(NULL) {};
+    Module() : fluent_(NULL) {};
     virtual ~Module() {};
     virtual const std::vector<std::string>& recv_event() const = 0;
     virtual int task_interval() const = 0;
     virtual void bind_event_id(const std::string &ev_name, swarm::ev_id eid) {
     }
-    void set_logger(fluent::Logger *logger) { this->logger_ = logger; }
+    void set_fluent(fluent::Logger *fluent) { this->fluent_ = fluent; }
   };
 
 }

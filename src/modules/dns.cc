@@ -186,13 +186,13 @@ namespace devourer {
       Query *q = dynamic_cast<Query*>(n);
 
       if(!(q->has_reply())) {
-        fluent::Message *msg = this->logger_->retain_message("dns.tx");
+        fluent::Message *msg = this->fluent_->retain_message("dns.tx");
         msg->set_ts(q->last_ts());
         msg->set("client", q->client());
         msg->set("server", q->server());
         msg->set("q_name", q->q_name(0));
         msg->set("status", "timeout");
-        this->logger_->emit(msg);
+        this->fluent_->emit(msg);
       }
 
       delete n;
@@ -250,26 +250,26 @@ namespace devourer {
         tv.tv_sec = q->last_ts();
         double ts = p.ts() - q->last_ts();
 
-        fluent::Message *msg = this->logger_->retain_message("dns.tx");
+        fluent::Message *msg = this->fluent_->retain_message("dns.tx");
         msg->set_ts(q->last_ts());
         msg->set("client", q->client());
         msg->set("server", q->server());
         msg->set("q_name", q->q_name(0));
         msg->set("status", "success");
         msg->set("latency", ts);
-        this->logger_->emit(msg);
+        this->fluent_->emit(msg);
         q->set_has_reply(true);
 
         size_t an_max = p.value_size("dns.an_name");
         for(size_t i = 0; i < an_max; i++) {
-          fluent::Message *msg = this->logger_->retain_message("dns.log");
+          fluent::Message *msg = this->fluent_->retain_message("dns.log");
           msg->set_ts(tv.tv_sec);
           msg->set("client", p.dst_addr());
           msg->set("server", p.src_addr());
           msg->set("name", p.value("dns.an_name", i).repr());
           msg->set("type", p.value("dns.an_type", i).repr());
           msg->set("data", p.value("dns.an_data", i).repr());
-          this->logger_->emit(msg);
+          this->fluent_->emit(msg);
 
           // XXX: Merge A/AAAA record process and CNAME record process
           uint32_t rec_type = p.value("dns.an_type", i).uint32();
@@ -310,13 +310,13 @@ namespace devourer {
 
       } else {
         // Matched query is not found.
-        fluent::Message *msg = this->logger_->retain_message("dns.tx");
+        fluent::Message *msg = this->fluent_->retain_message("dns.tx");
         msg->set_ts(p.ts());
         msg->set("client", p.dst_addr());
         msg->set("server", p.src_addr());
         msg->set("q_name", p.value("dns.qd_name").repr());
         msg->set("status", "miss");
-        this->logger_->emit(msg);
+        this->fluent_->emit(msg);
       }
     }
   }
