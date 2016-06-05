@@ -70,7 +70,7 @@ namespace devourer {
   }
   
   void ModFlow::recv (swarm::ev_id eid, const swarm::Property &p) {
-    static const bool FLOW_DBG = false;
+    static const bool FLOW_DBG = true;
 
     // Get packet time.
     struct timeval tv;
@@ -164,6 +164,7 @@ namespace devourer {
     }
   }
   void ModFlow::exec (const struct timespec &ts) {
+    /*
     fluent::Message *msg = this->logger_->retain_message("flow.update");
     msg->set_ts(ts.tv_sec);
     fluent::Message::Map *map = msg->retain_map("flow_size");
@@ -172,7 +173,7 @@ namespace devourer {
     }
     this->update_map_.clear();
     this->logger_->emit(msg);
-
+    */
   }
   const std::vector<std::string>& ModFlow::recv_event() const {
     return ModFlow::recv_events_;
