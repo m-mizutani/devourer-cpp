@@ -131,13 +131,9 @@ namespace devourer {
         
         if (!src.empty()) {
           msg->set("src_name", src);
-        } else {
-          msg->set_nil("src_name");
         }
         if (!dst.empty()) {
           msg->set("dst_name", dst);
-        } else {
-          msg->set_nil("dst_name");
         }
         
         msg->set("proto", p.proto());
@@ -164,6 +160,7 @@ namespace devourer {
     }
   }
   void ModFlow::exec (const struct timespec &ts) {
+    /*
     fluent::Message *msg = this->logger_->retain_message("flow.update");
     msg->set_ts(ts.tv_sec);
     fluent::Message::Map *map = msg->retain_map("flow_size");
@@ -172,7 +169,7 @@ namespace devourer {
     }
     this->update_map_.clear();
     this->logger_->emit(msg);
-
+    */
   }
   const std::vector<std::string>& ModFlow::recv_event() const {
     return ModFlow::recv_events_;

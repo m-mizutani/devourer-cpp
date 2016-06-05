@@ -46,6 +46,8 @@ Devourer::Devourer(const std::string &target, devourer::Source src) :
   this->install_module(mod_dns);
   this->install_module(mod_flow);
   this->install_module(mod_local);
+
+  this->logger_->set_tag_prefix("devourer");
 }
 
 Devourer::~Devourer(){
