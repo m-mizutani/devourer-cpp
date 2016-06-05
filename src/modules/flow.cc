@@ -131,13 +131,9 @@ namespace devourer {
         
         if (!src.empty()) {
           msg->set("src_name", src);
-        } else {
-          msg->set_nil("src_name");
         }
         if (!dst.empty()) {
           msg->set("dst_name", dst);
-        } else {
-          msg->set_nil("dst_name");
         }
         
         msg->set("proto", p.proto());

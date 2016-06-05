@@ -42,7 +42,6 @@ namespace devourer {
     class Flow : public LRUHash::Node {
     private:
       uint64_t hv_;
-      size_t flow_hv_;
       void *key_;
       size_t keylen_;
       time_t created_at_;
