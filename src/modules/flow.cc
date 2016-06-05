@@ -70,7 +70,7 @@ namespace devourer {
   }
   
   void ModFlow::recv (swarm::ev_id eid, const swarm::Property &p) {
-    static const bool FLOW_DBG = true;
+    static const bool FLOW_DBG = false;
 
     // Get packet time.
     struct timeval tv;
