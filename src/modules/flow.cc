@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "./flow.h"
+#include "./flow.hpp"
 
 #include <fluent.hpp>
 #include <swarm.hpp>
@@ -34,9 +34,9 @@
 #include <sstream>
 #include <iomanip>
 
-#include "../devourer.h"
-#include "../debug.h"
-#include "./dns.h"
+#include "../devourer.hpp"
+#include "../debug.hpp"
+#include "./dns.hpp"
 
 namespace devourer {
   

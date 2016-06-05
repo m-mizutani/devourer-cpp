@@ -31,7 +31,8 @@ ENDIF()
 INCLUDE_DIRECTORIES(${INC_DIR} ${FLUENT_INCLUDES} ./src ./external/swarm/src)
 LINK_DIRECTORIES(${LIB_DIR} ${FLUENT_LIBRARIES} ./external/)
 FILE(GLOB BASESRCS 
-	  "src/*.cc" "src/*.h" "src/modules/*.cc" "src/modules/*.h"
+	  "src/*.cc" "src/*.hpp"
+	  "src/modules/*.cc" "src/modules/*.hpp"
 	  "external/swarm/src/swarm/*.hpp"
 	  "external/swarm/src/*.cc" "external/swarm/src/*.hpp"
 	  "external/swarm/src/proto/*.cc" 

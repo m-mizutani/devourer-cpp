@@ -27,13 +27,13 @@
 #include <iostream>
 #include <fluent.hpp>
 #include <swarm.hpp>
-#include "./devourer.h"
-#include "./debug.h"
+#include "./devourer.hpp"
+#include "./debug.hpp"
 
-#include "./module.h"
-#include "./modules/dns.h"
-#include "./modules/flow.h"
-#include "./modules/local.h"
+#include "./module.hpp"
+#include "./modules/dns.hpp"
+#include "./modules/flow.hpp"
+#include "./modules/local.hpp"
 
 Devourer::Devourer(const std::string &target, devourer::Source src) :
   target_(target), src_(src), netcap_(NULL), logger_(new fluent::Logger())

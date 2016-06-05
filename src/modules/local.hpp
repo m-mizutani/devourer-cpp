@@ -27,8 +27,8 @@
 #ifndef SRC_MODULES_LOCAL_H__
 #define SRC_MODULES_LOCAL_H__
 
-#include "../module.h"
-#include "../devourer.h"
+#include "../module.hpp"
+#include "../devourer.hpp"
 
 
 namespace devourer {

@@ -25,7 +25,7 @@
  */
 
 #include <vector>
-#include "./devourer.h"
+#include "./devourer.hpp"
 #include "./optparse.h"
 
 int devourer_main(int argc, char *argv[]) {

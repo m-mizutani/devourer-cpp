@@ -24,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "./local.h"
+#include "./local.hpp"
 
 namespace devourer {
   const std::vector<std::string> ModLocal::recv_events_{

@@ -24,13 +24,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "./dns.h"
+#include "./dns.hpp"
 #include <iostream>
 #include <string.h>
 #include <fluent.hpp>
 
-#include "../devourer.h"
-#include "../debug.h"
+#include "../devourer.hpp"
+#include "../debug.hpp"
 
 namespace devourer {
 

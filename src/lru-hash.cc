@@ -24,8 +24,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "./lru-hash.h"
-#include "./debug.h"
+#include "./lru-hash.hpp"
+#include "./debug.hpp"
 
 namespace devourer {
   LRUHash::LRUHash(size_t timeslot_size, size_t bucket_size) : 

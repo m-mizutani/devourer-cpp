@@ -31,9 +31,9 @@
 #include <vector>
 #include <msgpack.hpp>
 
-#include "../module.h"
-#include "../devourer.h"
-#include "../lru-hash.h"
+#include "../module.hpp"
+#include "../devourer.hpp"
+#include "../lru-hash.hpp"
 
 namespace devourer {
   class ModDns : public Module {
