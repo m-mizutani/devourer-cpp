@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Masayoshi Mizutani <muret@haeena.net>
+ * Copyright (c) 2014 Masayoshi Mizutani <mizutani@sfc.wide.ad.jp>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
