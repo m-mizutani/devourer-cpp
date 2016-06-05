@@ -53,7 +53,9 @@ namespace devourer {
       msg->set("dst_pr", p.value("arp.dst_pr").repr());
       this->logger_->emit(msg);
     }
-    
+
+    // ToDo: change to flat object scheme, do not use nest
+      /*
     if (eid == this->recv_events_id_[MDNS_PACKET]) {
       fluent::Message *msg = this->logger_->retain_message("mdns");
       msg->set_ts(p.tv_sec());
@@ -85,6 +87,7 @@ namespace devourer {
       
       this->logger_->emit(msg);
     }
+      */
   }
   
   void ModLocal::exec(const struct timespec &ts) {
