@@ -97,7 +97,6 @@ namespace devourer {
 
           fluent::Message *msg = this->fluent_->retain_message("flow.log");
           flow->build_message(msg);
-          msg->set_ts(tv.tv_sec);
           this->fluent_->emit(msg);
           delete flow;
         }
@@ -247,29 +246,48 @@ namespace devourer {
   }
 
   void ModFlow::Flow::build_message(fluent::Message *msg) {
-    msg->set("l_addr", this->l_addr_);
-    msg->set("r_addr", this->r_addr_);
-    msg->set("l_port", this->l_port_);
-    msg->set("r_port", this->r_port_);
     msg->set("proto",  this->proto_);
-    msg->set("l_size", this->l_size_);
-    msg->set("r_size", this->r_size_);
-    msg->set("l_pkt",  this->l_pkt_);
-    msg->set("r_pkt",  this->r_pkt_);
     msg->set("init_ts", static_cast<unsigned int>(this->created_at_));
     msg->set("last_ts", static_cast<unsigned int>(this->updated_at_));
     msg->set("hash",   this->hv_hex_);
+    msg->set_ts(static_cast<unsigned int>(this->created_at_));
       
-    if (!this->l_name_.empty()) {
-      msg->set("l_name", this->l_name_);
-    }
-    if (!this->r_name_.empty()) {
-      msg->set("r_name", this->r_name_);
-    }
     switch (this->init_dir_) {
-      case swarm::FlowDir::DIR_L2R: msg->set("init", "l"); break;
-      case swarm::FlowDir::DIR_R2L: msg->set("init", "r"); break;
-      case swarm::FlowDir::DIR_NIL: break; // nothing to do
+    case swarm::FlowDir::DIR_L2R:
+      msg->set("c_addr", this->l_addr_);
+      msg->set("s_addr", this->r_addr_);
+      msg->set("c_port", this->l_port_);
+      msg->set("s_port", this->r_port_);
+      msg->set("c_size", this->l_size_);
+      msg->set("s_size", this->r_size_);
+      msg->set("c_pkt",  this->l_pkt_);
+      msg->set("s_pkt",  this->r_pkt_);
+      if (!this->l_name_.empty()) {
+        msg->set("c_name", this->l_name_);
+      }
+      if (!this->r_name_.empty()) {
+        msg->set("s_name", this->r_name_);
+      }
+      break;
+      
+    case swarm::FlowDir::DIR_R2L:
+      msg->set("s_addr", this->l_addr_);
+      msg->set("c_addr", this->r_addr_);
+      msg->set("s_port", this->l_port_);
+      msg->set("c_port", this->r_port_);
+      msg->set("s_size", this->l_size_);
+      msg->set("c_size", this->r_size_);
+      msg->set("s_pkt",  this->l_pkt_);
+      msg->set("c_pkt",  this->r_pkt_);
+      if (!this->l_name_.empty()) {
+        msg->set("s_name", this->l_name_);
+      }
+      if (!this->r_name_.empty()) {
+        msg->set("c_name", this->r_name_);
+      }
+      break;
+      
+    case swarm::FlowDir::DIR_NIL: assert(0); break; // nothing to do
     }
   }
 
